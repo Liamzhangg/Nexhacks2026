@@ -1,0 +1,8 @@
+langchain
+langchain_openai
+dotenv
+ipykernel
+langchain_google_genai
+flask
+flask_cors
+Werkzeug

@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+:root {
+  --background: #000000;
+  --foreground: #ffffff;
+  --accent: #1fd4d4;
+  --muted: #9aa0a6;
+  --border: #2a2a2a;
+}
+
+@theme inline {
+  --font-sans: var(--font-oxanium);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body {
+    background-color: var(--background);
+  }
+
+  body {
+    color: var(--foreground);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@layer utilities {
+  .fade-up {
+    animation: fade-up 0.8s ease-out both;
+  }
+
+  .fade-up-delay-1 {
+    animation-delay: 120ms;
+  }
+
+  .fade-up-delay-2 {
+    animation-delay: 240ms;
+  }
+}

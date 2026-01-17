@@ -1,0 +1,48 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/frontend/node_modules
+
+# next.js
+/.next/
+/frontend/.next/
+/out/
+
+# production
+/build
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files
+.env*
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+.python-version
+pip-wheel-metadata/
+
+# notebooks
+.ipynb_checkpoints/
+
+# backend artifacts
+/backend/replaceable_objects.json
+/backend/cloudglue/replaceable_objects.json
+/backend/cloudglue/input.mp4
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
