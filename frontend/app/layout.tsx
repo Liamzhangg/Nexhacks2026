@@ -31,6 +31,9 @@ export default function RootLayout({
                 Nexhacks2026
               </div>
               <nav className="flex flex-wrap items-center gap-2">
+                <Link href="/home" className={linkClassName}>
+                  Home
+                </Link>
                 <Link href="/edit" className={linkClassName}>
                   Edit
                 </Link>
