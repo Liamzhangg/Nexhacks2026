@@ -1,146 +1,91 @@
-import cv2
-import torch
-import numpy as np
-from accelerate import Accelerator
-from transformers import Sam3VideoModel, Sam3VideoProcessor
-from transformers.video_utils import load_video
+from cloudglue_client import upload_video, create_extract_job, wait_until_completed
+from mentions import collect_mentions, merge_by_exact_name_union_find, generic_filter_by_mentions_or_time
+from intervals import DEFAULT_MERGE_GAP_SECONDS
+from openai_dedup import (
+    gpt_dedup_and_filter,
+    apply_dedup_mapping_union_intervals,
+    gpt_merge_tracks_if_needed,
+)
+from sam3 import sam3_segment_object_in_timerange
 
-VIDEO_PATH = "input.mp4"
-OUTPUT_PATH = "output.mp4"
-TEXT_PROMPT = "a beverage bottle or can placed naturally in the scene"
-MAX_SECONDS = 1.0
-MASK_THRESHOLD = 0.5
 
-def frame_to_bgr(frame):
-    # frame may be PIL.Image or numpy RGB
-    if hasattr(frame, "convert") and hasattr(frame, "size"):
-        rgb = np.array(frame.convert("RGB"))
-    else:
-        rgb = np.array(frame)
-    if rgb.ndim == 2:
-        rgb = np.stack([rgb, rgb, rgb], axis=-1)
-    return cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+def main() -> None:
+    VIDEO_PATH = "input.mp4"
+    TARGET_OBJECT_DESCRIPTION = "a Coca-Cola bottle"
 
-def squeeze_mask(mask):
-    # mask could be [H,W] or [1,H,W] or [H,W,1] etc
-    m = mask
-    if isinstance(m, torch.Tensor):
-        m = m.float().detach().cpu().numpy()
-    else:
-        m = np.array(m, dtype=np.float32)
+    print("Uploading video...")
+    video_url = upload_video(VIDEO_PATH)
+    print("Uploaded:", video_url)
 
-    while m.ndim > 2:
-        m = m[0]
-    if m.ndim == 2:
-        return m
-    # fallback
-    return m.reshape(m.shape[0], m.shape[1])
+    print("Creating extract job...")
+    job = create_extract_job(video_url=video_url, target_object_description=TARGET_OBJECT_DESCRIPTION)
+    job_id = job["job_id"]
+    print("Job ID:", job_id)
 
-def overlay_mask(frame_bgr, mask_2d, alpha=0.5):
-    h, w = frame_bgr.shape[:2]
-    if mask_2d.shape[0] != h or mask_2d.shape[1] != w:
-        mask_2d = cv2.resize(mask_2d, (w, h), interpolation=cv2.INTER_LINEAR)
+    print("Waiting for completion...")
+    result = wait_until_completed(job_id, on_status=lambda s: print("Job status:", s))
 
-    sel = mask_2d > MASK_THRESHOLD
-    if not np.any(sel):
-        return frame_bgr
+    print("Collecting mentions...")
+    mentions = collect_mentions(result)
+    print("Mentions:", len(mentions))
 
-    out = frame_bgr.copy()
-    green = np.array([0, 255, 0], dtype=np.float32)
-    pix = out[sel].astype(np.float32)
-    out[sel] = ((1 - alpha) * pix + alpha * green).astype(np.uint8)
-    return out
+    print("Merging intervals by exact name...")
+    merged_by_name = merge_by_exact_name_union_find(mentions, merge_gap_seconds=DEFAULT_MERGE_GAP_SECONDS)
 
-def main():
-    accelerator = Accelerator()
-    device = accelerator.device
-    print("Using device:", device)
+    print("Generic filtering...")
+    merged_by_name = generic_filter_by_mentions_or_time(merged_by_name)
 
-    model = Sam3VideoModel.from_pretrained(
-        "facebook/sam3",
-        token=True,
-        torch_dtype=torch.bfloat16,
-    ).to(device)
-    processor = Sam3VideoProcessor.from_pretrained(
-        "facebook/sam3",
-        token=True,
-    )
-    model.eval()
+    gpt_inputs = []
+    for name, info in merged_by_name.items():
+        gpt_inputs.append(
+            {
+                "name": name,
+                "mention_count": int(info["mention_count"]),
+                "total_visible_seconds": round(float(info["total_visible_seconds"]), 3),
+                "intervals": [[round(st, 3), round(et, 3)] for st, et in info["intervals"]],
+                "scene_descriptions": info.get("scene_descriptions", []) or [],
+            }
+        )
+    gpt_inputs.sort(key=lambda x: x["name"].lower())
 
-    cap = cv2.VideoCapture(VIDEO_PATH)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    cap.release()
-    if not fps or fps <= 1e-6:
-        fps = 30.0
+    print("Calling GPT to deduplicate and filter names...")
+    kept = gpt_dedup_and_filter(target_desc=TARGET_OBJECT_DESCRIPTION, inputs=gpt_inputs)
 
-    max_frames = max(1, int(round(fps * MAX_SECONDS)))
-
-    video_frames, _ = load_video(VIDEO_PATH)
-    video_frames = video_frames[:max_frames]
-    print(f"Processing {len(video_frames)} frames (first {MAX_SECONDS}s)")
-
-    inference_session = processor.init_video_session(
-        video=video_frames,
-        inference_device=device,
-        processing_device="cpu",
-        video_storage_device="cpu",
-        dtype=torch.bfloat16,
+    print("Unioning timestamps for merged names...")
+    tracks = apply_dedup_mapping_union_intervals(
+        merged_by_name=merged_by_name,
+        kept_decisions=kept,
+        merge_gap_seconds=DEFAULT_MERGE_GAP_SECONDS,
     )
 
-    inference_session = processor.add_text_prompt(
-        inference_session=inference_session,
-        text=TEXT_PROMPT,
+    print("Merging overlapping tracks if needed...")
+    tracks = gpt_merge_tracks_if_needed(
+        target_desc=TARGET_OBJECT_DESCRIPTION,
+        tracks=tracks,
+        merge_gap_seconds=DEFAULT_MERGE_GAP_SECONDS,
     )
 
-    outputs_per_frame = {}
+    print("Tracks:", len(tracks))
+    for t in tracks:
+        print("Object:", t["object_name"])
+        print("Aliases:", t["aliases"])
+        print("Intervals:", t["intervals"])
+        descs = t.get("scene_descriptions", []) or []
+        if descs:
+            print("Scene:", descs[0])
+        print()
 
-    with torch.no_grad():
-        for model_outputs in model.propagate_in_video_iterator(
-            inference_session=inference_session,
-            max_frame_num_to_track=len(video_frames),
-        ):
-            processed = processor.postprocess_outputs(
-                inference_session,
-                model_outputs,
+    print("Driving Sam3Model...")
+    for tr in tracks:
+        obj_name = tr["object_name"]
+        for iv in tr["intervals"]:
+            sam3_segment_object_in_timerange(
+                VIDEO_PATH,
+                obj_name,
+                float(iv["start_time"]),
+                float(iv["end_time"]),
             )
-            outputs_per_frame[model_outputs.frame_idx] = processed
 
-    # 视频尺寸从第一帧拿
-    first_bgr = frame_to_bgr(video_frames[0])
-    h, w = first_bgr.shape[:2]
-
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    out_video = cv2.VideoWriter(OUTPUT_PATH, fourcc, float(fps), (w, h))
-
-    total_found = 0
-
-    for i in range(len(video_frames)):
-        frame_bgr = frame_to_bgr(video_frames[i])
-        out = outputs_per_frame.get(i, None)
-
-        if out is not None:
-            masks = out.get("masks", None)
-            scores = out.get("scores", None)
-
-            if masks is not None and len(masks) > 0:
-                if scores is not None and len(scores) > 0:
-                    best = int(torch.argmax(scores).item()) if isinstance(scores, torch.Tensor) else int(np.argmax(np.array(scores)))
-                else:
-                    best = 0
-
-                mask2d = squeeze_mask(masks[best])
-                frame_bgr = overlay_mask(frame_bgr, mask2d, alpha=0.5)
-                total_found += 1
-
-        out_video.write(frame_bgr)
-        cv2.imshow("SAM3 first second", frame_bgr)
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
-
-    out_video.release()
-    cv2.destroyAllWindows()
-    print("Saved result to", OUTPUT_PATH)
-    print("Frames with at least one mask:", total_found, "/", len(video_frames))
 
 if __name__ == "__main__":
     main()
