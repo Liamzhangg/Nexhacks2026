@@ -106,41 +106,14 @@ export default function HomePage() {
             <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-pink-600/20 blur-3xl rounded-3xl" />
             <div className="relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/10 to-white/5 backdrop-blur-xl overflow-hidden">
               <div className="p-4 sm:p-6 lg:p-8">
-                {/* Mock video player */}
-                <div className="relative aspect-video rounded-2xl bg-gradient-to-br from-gray-900 to-black border border-white/10 overflow-hidden group">
-                  {/* Video thumbnail effect */}
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(0,0,0,0.8)_100%)]" />
-                  
-                  {/* Product placements showcase */}
-                  <div className="absolute inset-0 flex items-center justify-center gap-12">
-                    <div className="text-center transform -rotate-6 transition-transform group-hover:rotate-0 group-hover:scale-110">
-                      <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 border border-white/20 flex items-center justify-center mb-3 shadow-2xl">
-                        <span className="text-4xl">📱</span>
-                      </div>
-                      <div className="text-xs text-white/60">USA: iPhone</div>
-                    </div>
-                    <div className="text-center transition-transform group-hover:scale-110">
-                      <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 border border-white/20 flex items-center justify-center mb-3 shadow-2xl">
-                        <span className="text-4xl">📱</span>
-                      </div>
-                      <div className="text-xs text-white/60">China: Huawei</div>
-                    </div>
-                    <div className="text-center transform rotate-6 transition-transform group-hover:rotate-0 group-hover:scale-110">
-                      <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 border border-white/20 flex items-center justify-center mb-3 shadow-2xl">
-                        <span className="text-4xl">📱</span>
-                      </div>
-                      <div className="text-xs text-white/60">Nigeria: Tecno</div>
-                    </div>
-                  </div>
-
-                  {/* Play button overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <button className="h-20 w-20 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center transition-all hover:scale-110 hover:bg-white/20 group-hover:shadow-[0_0_40px_rgba(168,85,247,0.6)]">
-                      <svg className="h-8 w-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </button>
-                  </div>
+                <div className="relative aspect-video rounded-2xl bg-black border border-white/10 overflow-hidden">
+                  <iframe
+                    className="h-full w-full"
+                    src="https://www.youtube.com/embed/zORMeFYmnAk"
+                    title="ADaptiv demo"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
                 </div>
 
                 {/* Edit button */}
