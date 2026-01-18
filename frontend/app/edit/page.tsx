@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
 
 type CloudglueTimestamp = {
   start_time: number
@@ -163,9 +163,8 @@ export default function EditPage() {
       if (imageFile) {
         formData.append("image", imageFile)
       }
-      formData.append("text", "")
 
-      const response = await fetch(`${API_BASE_URL}/process-video`, {
+      const response = await fetch(`${API_BASE_URL}/analyze`, {
         method: "POST",
         body: formData,
       })
