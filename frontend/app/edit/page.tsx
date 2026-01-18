@@ -286,14 +286,14 @@ export default function EditPage() {
                 {imageFile ? <span className="ml-3 text-sm text-white">{imageFile.name}</span> : null}
                 <input type="file" accept="image/*" className="sr-only" onChange={handleImageChange} />
               </label>
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
                   className="w-full rounded-xl bg-[#23232b] px-6 py-3 font-semibold text-white transition hover:bg-[#2b2b34] disabled:cursor-not-allowed disabled:bg-[#23232b]/60"
-                >
+              >
                   {isSubmitting ? "Processing..." : "Process items"}
-                </button>
+              </button>
               </div>
             </div>
           </div>
@@ -493,7 +493,8 @@ export default function EditPage() {
                   <div className="rounded-2xl border border-white/10 bg-black/50 p-4">
                     <p className="text-xs uppercase tracking-[0.3em] text-white/60">Checklist</p>
                     <p className="mt-2 text-sm text-white/70">{cloudglueOutput.target_description}</p>
-                    <div className="mt-4 flex flex-col gap-3">
+                    <div className="mt-4 max-h-[420px] overflow-y-auto pr-2">
+                      <div className="flex flex-col gap-3">
                       {cloudglueOutput.items.map((item, index) => {
                         const key = `${item.label}-${index}`
                         const checked = selectedItems[key] ?? false
@@ -529,6 +530,7 @@ export default function EditPage() {
                           </label>
                         )
                       })}
+                      </div>
                     </div>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-black/50 p-4">
