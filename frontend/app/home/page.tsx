@@ -1,12 +1,18 @@
 "use client";
 
-import { useState } from 'react';
+import { Sora } from "next/font/google";
+import { useState } from "react";
+
+const sora = Sora({
+  subsets: ["latin"],
+  weight: ["400", "600", "700", "800"],
+});
 
 export default function HomePage() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#0a0a0a] text-white">
+    <main className={`${sora.className} relative min-h-screen overflow-hidden bg-[#0a0a0a] text-white`}>
       {/* Animated gradient background */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-40 left-1/4 h-[600px] w-[600px] rounded-full bg-purple-600/20 blur-[120px] animate-pulse" style={{animationDuration: '4s'}} />
@@ -84,8 +90,9 @@ export default function HomePage() {
           </h1>
 
           <p className="mx-auto max-w-3xl text-xl text-white/60 leading-relaxed mb-12">
-            Post-production product placement that adapts to your audience. With one scene, generate endless ads and
-            seamless product placements. <span className="text-white/80 font-medium">One movie, infinite possibilities.</span>
+            Post-production product placement that adapts to your audience. With one scene, generate seamless product
+            placements that obey physics.
+            <span className="mt-3 block text-white/90 font-semibold">One scene, endless ad adaption potential</span>
           </p>
           <div className="flex flex-col items-center justify-center mb-12 text-white/70">
             <span className="text-sm font-semibold uppercase tracking-[0.3em]">See the capabilities</span>

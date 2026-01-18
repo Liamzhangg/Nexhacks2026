@@ -1,11 +1,12 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { Oxanium } from "next/font/google"
+import { Sora } from "next/font/google"
 import "./globals.css"
 
-const oxanium = Oxanium({
+const sora = Sora({
   subsets: ["latin"],
-  variable: "--font-oxanium",
+  variable: "--font-sora",
+  weight: ["400", "600", "700", "800"],
 })
 
 export const metadata: Metadata = {
@@ -22,7 +23,7 @@ export default function RootLayout({
     "rounded-2xl border border-white/20 px-6 py-3 text-sm font-medium text-white/75 transition hover:border-white/40 hover:text-white md:px-8 md:py-4 md:text-base"
 
   return (
-    <html lang="en" className={oxanium.variable}>
+    <html lang="en" className={sora.variable}>
       <body className="bg-black font-sans antialiased text-white">
         <div className="min-h-screen bg-black text-white">
           <header className="sticky top-0 z-20 border-b border-white/10 bg-black/70 backdrop-blur">

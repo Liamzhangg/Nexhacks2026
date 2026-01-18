@@ -120,7 +120,7 @@ export default function AboutPage() {
               <p className="text-white/80 leading-relaxed">Ford F-150 → <span className="text-purple-400 font-medium">VW Golf</span> for viewers in Germany</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent p-6 backdrop-blur-sm">
-              <p className="text-white/80 leading-relaxed">Beauty products adapted for <span className="text-purple-400 font-medium">4C hair</span> in target regions</p>
+              <p className="text-white/80 leading-relaxed">Coke cans → <span className="text-purple-400 font-medium">Pepsi</span> in local markets</p>
             </div>
           </div>
         </div>
