@@ -158,6 +158,10 @@ export default function EditPage() {
       setError("Please upload a video before processing.")
       return
     }
+    if (!imageFile) {
+      setError("Please upload an image before processing.")
+      return
+    }
 
     setIsSubmitting(true)
     setError(null)
