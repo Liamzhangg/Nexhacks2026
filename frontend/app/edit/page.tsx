@@ -15,10 +15,10 @@ target_description: string
 items: CloudglueItem[]
 }
 export default function EditPage() {
-const [videoFile, setVideoFile] = useState<File | null>(null)
-const [imageFile, setImageFile] = useState<File | null>(null)
-const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-const [localVideoUrl, setLocalVideoUrl] = useState<string | null>(null)
+  const [videoFile, setVideoFile] = useState<File | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [localVideoUrl, setLocalVideoUrl] = useState<string | null>(null)
 const [videoDuration, setVideoDuration] = useState<number | null>(null)
 const [currentTime, setCurrentTime] = useState(0)
 const [isPlaying, setIsPlaying] = useState(false)
@@ -28,16 +28,16 @@ const [clipEnd, setClipEnd] = useState<number | null>(null)
 const [cloudglueOutput, setCloudglueOutput] = useState<CloudglueResponse | null>(null)
 const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({})
 const [flowStep, setFlowStep] = useState<"edit" | "select">("edit")
-const [isSubmitting, setIsSubmitting] = useState(false)
-const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 const manualVideoRef = useRef<HTMLVideoElement | null>(null)
 const timelineRef = useRef<HTMLDivElement | null>(null)
 const [draggingHandle, setDraggingHandle] = useState<"start" | "end" | null>(null)
 const selectionRef = useRef<HTMLDivElement | null>(null)
-useEffect(() => {
-return () => {
-if (previewUrl) URL.revokeObjectURL(previewUrl)
-if (localVideoUrl) URL.revokeObjectURL(localVideoUrl)
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+      if (localVideoUrl) URL.revokeObjectURL(localVideoUrl)
     }
   }, [previewUrl, localVideoUrl])
 useEffect(() => {
@@ -48,11 +48,11 @@ initial[`${item.label}-${index}`] = true
     })
 setSelectedItems(initial)
   }, [cloudglueOutput])
-const handleVideoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-const file = event.target.files?.[0] ?? null
-setVideoFile(file)
-setPreviewUrl(null)
-setError(null)
+  const handleVideoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null
+    setVideoFile(file)
+    setPreviewUrl(null)
+    setError(null)
 setVideoDuration(null)
 setCurrentTime(0)
 setIsPlaying(false)
@@ -60,12 +60,12 @@ setClipStart(0)
 setClipEnd(null)
 setCloudglueOutput(null)
 setFlowStep("edit")
-if (localVideoUrl) URL.revokeObjectURL(localVideoUrl)
-setLocalVideoUrl(file ? URL.createObjectURL(file) : null)
+    if (localVideoUrl) URL.revokeObjectURL(localVideoUrl)
+    setLocalVideoUrl(file ? URL.createObjectURL(file) : null)
   }
-const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-const file = event.target.files?.[0] ?? null
-setImageFile(file)
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null
+    setImageFile(file)
   }
 const trimVideo = async (file: File, startTime: number, endTime: number) => {
 const duration = endTime - startTime
@@ -133,19 +133,19 @@ const clampedStart = Math.max(0, Math.min(start, safeDuration))
 const clampedEnd = Math.max(clampedStart, Math.min(end, safeDuration))
 return { start: clampedStart, end: clampedEnd }
   }
-const handleSubmit = async () => {
-if (!videoFile) {
-setError("Please upload a video before processing.")
-return
+  const handleSubmit = async () => {
+    if (!videoFile) {
+      setError("Please upload a video before processing.")
+      return
     }
 if (!imageFile) {
 setError("Please upload an image before processing.")
 return
     }
-setIsSubmitting(true)
-setError(null)
-try {
-const formData = new FormData()
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      const formData = new FormData()
 let videoToSend: Blob | File = videoFile
 const end = clipEnd ?? videoDuration ?? null
 if (end != null) {
@@ -163,9 +163,9 @@ const response = await fetch(`${API_BASE_URL}/analyze`, {
         method: "POST",
         body: formData,
       })
-if (!response.ok) {
-const payload = await response.json().catch(() => null)
-throw new Error(payload?.error ?? "Processing failed.")
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null)
+        throw new Error(payload?.error ?? "Processing failed.")
       }
 if ((response.headers.get("content-type") ?? "").includes("application/json")) {
 const payload = (await response.json()) as CloudglueResponse
@@ -178,14 +178,14 @@ requestAnimationFrame(() => {
 return
         }
       }
-const blob = await response.blob()
-const nextUrl = URL.createObjectURL(blob)
-setPreviewUrl(nextUrl)
+      const blob = await response.blob()
+      const nextUrl = URL.createObjectURL(blob)
+      setPreviewUrl(nextUrl)
     } catch (fetchError) {
-const message = fetchError instanceof Error ? fetchError.message : "Processing failed."
-setError(message)
+      const message = fetchError instanceof Error ? fetchError.message : "Processing failed."
+      setError(message)
     } finally {
-setIsSubmitting(false)
+      setIsSubmitting(false)
     }
   }
 const timelineProgress = videoDuration ? Math.min(100, (currentTime / videoDuration) * 100) : 0
@@ -237,7 +237,7 @@ setError(message)
 setIsSubmitting(false)
     }
   }
-return (
+  return (
 <main className="relative h-[calc(100vh-140px)] overflow-y-auto bg-[#0a0a0a] text-base text-white">
 <div className="pointer-events-none absolute inset-0">
 <div className="absolute -top-32 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(139,92,246,0.25),rgba(10,10,10,0))]" />
@@ -252,32 +252,32 @@ return (
 <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3">
 <label className="group flex w-full cursor-pointer items-center justify-center rounded-xl border border-dashed border-white/20 bg-white/5 px-4 py-3 text-center transition hover:border-purple-500/50 hover:bg-white/10">
 <span className="font-semibold text-white">Upload video</span>
-{videoFile ? <span className="ml-3 text-sm text-white">{videoFile.name}</span> : null}
-<input type="file" accept="video/*" className="sr-only" onChange={handleVideoChange} />
-</label>
+                {videoFile ? <span className="ml-3 text-sm text-white">{videoFile.name}</span> : null}
+                <input type="file" accept="video/*" className="sr-only" onChange={handleVideoChange} />
+              </label>
 <label className="group flex w-full cursor-pointer items-center justify-center rounded-xl border border-dashed border-white/20 bg-white/5 px-4 py-3 text-center transition hover:border-purple-500/50 hover:bg-white/10">
 <span className="font-semibold text-white">Upload image</span>
-{imageFile ? <span className="ml-3 text-sm text-white">{imageFile.name}</span> : null}
-<input type="file" accept="image/*" className="sr-only" onChange={handleImageChange} />
-</label>
-<button
-type="button"
-onClick={handleSubmit}
-disabled={isSubmitting}
+                {imageFile ? <span className="ml-3 text-sm text-white">{imageFile.name}</span> : null}
+                <input type="file" accept="image/*" className="sr-only" onChange={handleImageChange} />
+              </label>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
 className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
->
+              >
 {isSubmitting ? "Processing..." : "Process items"}
-</button>
-</div>
-</div>
+              </button>
+            </div>
+          </div>
 </div>
 <div className="mx-auto flex h-full w-full max-w-[96rem] flex-1 flex-col px-6 py-4 lg:px-10">
 <div className="relative flex flex-1 flex-col fade-up fade-up-delay-1">
               <section className="flex min-h-0 flex-1 flex-col pb-[230px]">
-                <div className="relative flex h-full w-full min-h-[320px] flex-1 items-center justify-center rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent p-4 md:p-6 backdrop-blur-sm">
-{previewUrl || localVideoUrl ? (
-<video
-key={previewUrl ?? localVideoUrl ?? "preview"}
+                <div className="relative flex w-full min-h-[320px] flex-1 items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent p-4 md:p-6 backdrop-blur-sm">
+                {previewUrl || localVideoUrl ? (
+                  <video
+                    key={previewUrl ?? localVideoUrl ?? "preview"}
 ref={manualVideoRef}
 onLoadedMetadata={(event) => {
 const duration = event.currentTarget.duration
@@ -302,10 +302,10 @@ setCurrentTime(clipStart)
 onPlay={() => setIsPlaying(true)}
 onPause={() => setIsPlaying(false)}
 className="max-h-full max-w-full rounded-2xl bg-black object-contain"
->
-<source src={previewUrl ?? localVideoUrl ?? undefined} />
-</video>
-                  ) : (
+                  >
+                    <source src={previewUrl ?? localVideoUrl ?? undefined} />
+                  </video>
+                ) : (
 <label className="flex h-full w-full cursor-pointer items-center justify-center rounded-2xl border border-dashed border-white/10 bg-black/40 text-center transition hover:border-white/30">
 <div className="flex flex-col items-center gap-3 text-white/80">
 <span className="text-sm uppercase tracking-[0.35em] text-white/70">Upload video</span>
@@ -439,14 +439,14 @@ disabled={!videoDuration}
                       ) : (
 <div className="flex h-28 items-center justify-center text-sm text-white/60">
                           Upload a video to customize the range of edit.
-</div>
-                      )}
-</div>
-</div>
-</div>
-</section>
+                  </div>
+                )}
+              </div>
 </div>
 </div>
+            </section>
+            </div>
+          </div>
 {flowStep === "select" && cloudglueOutput ? (
 <div ref={selectionRef} className="mx-auto w-full max-w-[96rem] px-6 pb-20 pt-10 lg:px-10">
 <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent p-8 backdrop-blur-sm">
@@ -527,8 +527,8 @@ className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 tex
 </div>
 </div>
           ) : null}
-</div>
-</div>
-</main>
+        </div>
+      </div>
+    </main>
   )
 }
