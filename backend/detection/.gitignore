@@ -1,0 +1,9 @@
+.venv/
+.idea/
+.DS_Store
+.env
+input.mp4
+output.mp4
+output2.mp4
+*.pth
+*.mp4
