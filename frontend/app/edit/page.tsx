@@ -484,12 +484,11 @@ export default function EditPage() {
                                 onPointerUp={() => setDraggingHandle(null)}
                                 onPointerLeave={() => setDraggingHandle(null)}
                               >
-                                <div className="absolute inset-y-0 left-0 bg-purple-400/20" style={{ width: `${timelineProgress}%` }} />
-                                <div className="absolute inset-y-0 w-[2px] bg-purple-400" style={{ left: `${timelineProgress}%` }} />
                                 <div
-                                  className="absolute inset-y-0 bg-white/10"
+                                  className="absolute inset-y-0 bg-purple-400/20"
                                   style={{ left: `${startPercent}%`, width: `${Math.max(0, endPercent - startPercent)}%` }}
                                 />
+                                <div className="absolute inset-y-0 w-[2px] bg-purple-400" style={{ left: `${timelineProgress}%` }} />
                                 <div className="absolute inset-y-0 w-[2px] bg-white/70" style={{ left: `${startPercent}%` }} />
                                 <div className="absolute inset-y-0 w-[2px] bg-white/70" style={{ left: `${endPercent}%` }} />
                                 <button
