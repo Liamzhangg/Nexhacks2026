@@ -346,7 +346,7 @@ export default function EditPage() {
                   </div>
                   <div className="flex flex-col rounded-2xl border border-white/10 bg-black/40 p-4">
                     <p className="text-xs uppercase tracking-[0.3em] text-white/60">Preview</p>
-                    <div className="mt-4 flex flex-1 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black">
+                    <div className="mt-4 w-full overflow-hidden rounded-2xl border border-white/10 bg-black" style={{ aspectRatio: "16 / 9", maxHeight: "46vh" }}>
                       {previewUrl || localVideoUrl ? (
                         <video
                           key={`selection-${previewUrl ?? localVideoUrl ?? "preview"}`}
