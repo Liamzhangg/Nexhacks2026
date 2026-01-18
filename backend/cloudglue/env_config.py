@@ -30,3 +30,11 @@ def get_openai_api_key() -> str:
 def get_openai_model(default: str = "gpt-4o-mini") -> str:
     _ensure_loaded()
     return os.getenv("OPENAI_MODEL", default)
+
+
+def get_gemini_api_key() -> str:
+    _ensure_loaded()
+    key = os.getenv("GEMINI_API")
+    if not key:
+        raise RuntimeError("Missing GEMINI_API in .env")
+    return key
