@@ -9,6 +9,9 @@ _client: Optional[TokenClient] = None
 _cache: dict[str, str] = {}
 
 
+TOKENC_ENABLED = 1
+
+
 def _get_client() -> TokenClient:
     global _client
     if _client is None:
@@ -17,7 +20,7 @@ def _get_client() -> TokenClient:
 
 
 def compress_prompt(text: str) -> str:
-    if tokenc_disabled():
+    if not TOKENC_ENABLED:
         return text
 
     t = (text or "").strip()

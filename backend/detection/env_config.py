@@ -32,12 +32,6 @@ def get_tokenc_api_key() -> str:
     return key
 
 
-def tokenc_disabled() -> bool:
-    _ensure_loaded()
-    v = (os.getenv("TOKENC_DISABLE", "0") or "0").strip().lower()
-    return v in {"1", "true", "yes", "y", "on"}
-
-
 def get_tokenc_aggressiveness(default: float = 0.55) -> float:
     _ensure_loaded()
     raw = os.getenv("TOKENC_AGGRESSIVENESS", str(default))
