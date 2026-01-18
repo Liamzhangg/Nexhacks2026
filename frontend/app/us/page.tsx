@@ -25,7 +25,7 @@ export default function UsPage() {
         <div className="fade-up">
           <h1 className="text-3xl font-semibold md:text-5xl">Us</h1>
           <p className="mt-4 max-w-2xl text-sm text-gray-300 md:text-base">
-            The people shaping the Nexhacks2026 experience.
+            The people shaping the ADaptiv experience.
           </p>
         </div>
 

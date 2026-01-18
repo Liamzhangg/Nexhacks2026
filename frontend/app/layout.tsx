@@ -9,7 +9,7 @@ const oxanium = Oxanium({
 })
 
 export const metadata: Metadata = {
-  title: "Nexhacks2026",
+  title: "ADaptiv",
   description: "Minimal front-end UI for video + image prompts.",
 }
 
@@ -28,7 +28,7 @@ export default function RootLayout({
           <header className="z-20 border-b border-white/10 bg-black/70 backdrop-blur">
             <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-6 px-6 py-6 md:px-10 md:py-8">
               <div className="text-2xl font-semibold uppercase tracking-[0.35em] text-teal-300 md:text-3xl">
-                Nexhacks2026
+                ADaptiv
               </div>
               <nav className="flex flex-wrap items-center gap-2">
                 <Link href="/home" className={linkClassName}>
