@@ -498,7 +498,7 @@ export default function EditPage() {
                     <p className="text-xs uppercase tracking-[0.3em] text-white/60">Checklist</p>
                     <p className="mt-2 text-sm text-white/70">{cloudglueOutput.target_description}</p>
                     <div className="mt-4 max-h-[420px] overflow-y-auto pr-2">
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-3 pb-6">
                       {cloudglueOutput.items.map((item, index) => {
                         const key = `${item.label}-${index}`
                         const checked = selectedItems[key] ?? false
