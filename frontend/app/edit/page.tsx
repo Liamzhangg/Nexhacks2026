@@ -33,7 +33,6 @@ export default function EditPage() {
   const [clipEnd, setClipEnd] = useState<number | null>(null)
   const [cloudglueOutput, setCloudglueOutput] = useState<CloudglueResponse | null>(null)
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({})
-  const [awaitingTargetSelection, setAwaitingTargetSelection] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const manualVideoRef = useRef<HTMLVideoElement | null>(null)
@@ -54,7 +53,6 @@ export default function EditPage() {
       initial[`${item.label}-${index}`] = true
     })
     setSelectedItems(initial)
-    setAwaitingTargetSelection(true)
   }, [cloudglueOutput])
 
   const handleVideoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,7 +137,7 @@ export default function EditPage() {
     return `${String(minutes).padStart(2, "0")}:${String(remaining).padStart(2, "0")}`
   }
 
-  const handleSubmit = async (phase: "analyze" | "generate" = awaitingTargetSelection ? "generate" : "analyze") => {
+  const handleSubmit = async () => {
     if (!videoFile) {
       setError("Please upload a video before processing.")
       return
@@ -166,14 +164,6 @@ export default function EditPage() {
         formData.append("image", imageFile)
       }
 
-      if (phase === "generate" && cloudglueOutput) {
-        const selectedTargets = cloudglueOutput.items.filter((item, index) => {
-          const key = `${item.label}-${index}`
-          return selectedItems[key]
-        })
-        formData.append("targets", JSON.stringify(selectedTargets))
-      }
-
       const response = await fetch(`${API_BASE_URL}/analyze`, {
         method: "POST",
         body: formData,
@@ -195,7 +185,6 @@ export default function EditPage() {
       const blob = await response.blob()
       const nextUrl = URL.createObjectURL(blob)
       setPreviewUrl(nextUrl)
-      setAwaitingTargetSelection(false)
     } catch (fetchError) {
       const message = fetchError instanceof Error ? fetchError.message : "Processing failed."
       setError(message)
@@ -244,18 +233,14 @@ export default function EditPage() {
                 {imageFile ? <span className="ml-3 text-sm text-white">{imageFile.name}</span> : null}
                 <input type="file" accept="image/*" className="sr-only" onChange={handleImageChange} />
               </label>
-              <button
-                type="button"
-                  onClick={() => handleSubmit()}
-                disabled={isSubmitting}
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
                   className="w-full rounded-xl bg-[#23232b] px-6 py-3 font-semibold text-white transition hover:bg-[#2b2b34] disabled:cursor-not-allowed disabled:bg-[#23232b]/60"
                 >
-                  {isSubmitting
-                    ? "Processing..."
-                    : awaitingTargetSelection
-                      ? "Generate selected"
-                      : "Generate video"}
-              </button>
+                  {isSubmitting ? "Processing..." : "Generate video"}
+                </button>
               </div>
             </div>
           </div>
@@ -339,15 +324,6 @@ export default function EditPage() {
                           )
                         })}
                       </div>
-                      {awaitingTargetSelection ? (
-                        <button
-                          type="button"
-                          onClick={() => handleSubmit("generate")}
-                          className="mt-4 w-full rounded-xl border border-teal-300/40 bg-teal-300/10 px-4 py-2 text-sm font-semibold text-teal-200 transition hover:bg-teal-300/20"
-                        >
-                          Generate selected
-                        </button>
-                      ) : null}
                     </div>
                   ) : null}
                 </div>
