@@ -273,8 +273,8 @@ className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 p
 </div>
 <div className="mx-auto flex h-full w-full max-w-[96rem] flex-1 flex-col px-6 py-4 lg:px-10">
 <div className="relative flex flex-1 flex-col fade-up fade-up-delay-1">
-<section className="flex min-h-0 flex-1 flex-col pb-[230px]">
-<div className="relative flex h-full max-h-[calc(100vh-520px)] flex-1 items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent p-4 md:p-6 backdrop-blur-sm">
+              <section className="flex min-h-0 flex-1 flex-col pb-[230px]">
+                <div className="relative flex h-full w-full min-h-[320px] flex-1 items-center justify-center rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent p-4 md:p-6 backdrop-blur-sm">
 {previewUrl || localVideoUrl ? (
 <video
 key={previewUrl ?? localVideoUrl ?? "preview"}
