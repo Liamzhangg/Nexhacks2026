@@ -3,7 +3,7 @@ import tempfile
 import traceback
 from typing import Optional
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, UploadFile, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -45,7 +45,15 @@ def _save_upload(upload: UploadFile, suffix: str) -> str:
             os.remove(path)
         except Exception:
             pass
-        raise HTTPException(status_code=400, detail="Empty upload")
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "Empty upload",
+                "filename": upload.filename,
+                "content_type": upload.content_type,
+            },
+        )
+
     return path
 
 
@@ -59,12 +67,23 @@ def _rm(path: Optional[str]) -> None:
 
 
 @app.post("/analyze")
-def analyze(video: UploadFile = File(...), image: Optional[UploadFile] = File(None)) -> JSONResponse:
+async def analyze(request: Request, video: UploadFile = File(...), image: Optional[UploadFile] = File(None)) -> JSONResponse:
     video_path: Optional[str] = None
     image_path: Optional[str] = None
     stage = "init"
 
     try:
+        ct = request.headers.get("content-type", "")
+        if "multipart/form-data" not in ct.lower():
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "Request must be multipart/form-data",
+                    "got_content_type": ct,
+                    "hint": "Use FormData and do not manually set Content-Type header",
+                },
+            )
+
         stage = "save_video"
         video_suffix = os.path.splitext(video.filename or "")[1] or ".mp4"
         video_path = _save_upload(video, suffix=video_suffix)
@@ -76,7 +95,6 @@ def analyze(video: UploadFile = File(...), image: Optional[UploadFile] = File(No
 
         stage = "analyze"
         result = analyze_video(video_path=video_path, image_path=image_path)
-
         return JSONResponse(content=result)
 
     except HTTPException:
