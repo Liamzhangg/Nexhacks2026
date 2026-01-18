@@ -35,7 +35,7 @@ export default function RootLayout({
                   Home
                 </Link>
                 <Link href="/edit" className={linkClassName}>
-                  Edit
+                  Playground
                 </Link>
                 <Link href="/demo" className={linkClassName}>
                   Demo
