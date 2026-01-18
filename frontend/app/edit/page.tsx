@@ -33,11 +33,13 @@ export default function EditPage() {
   const [clipEnd, setClipEnd] = useState<number | null>(null)
   const [cloudglueOutput, setCloudglueOutput] = useState<CloudglueResponse | null>(null)
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({})
+  const [flowStep, setFlowStep] = useState<"edit" | "select">("edit")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const manualVideoRef = useRef<HTMLVideoElement | null>(null)
   const timelineRef = useRef<HTMLDivElement | null>(null)
   const [draggingHandle, setDraggingHandle] = useState<"start" | "end" | null>(null)
+  const selectionRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     return () => {
@@ -65,6 +67,8 @@ export default function EditPage() {
     setIsPlaying(false)
     setClipStart(0)
     setClipEnd(null)
+    setCloudglueOutput(null)
+    setFlowStep("edit")
     if (localVideoUrl) URL.revokeObjectURL(localVideoUrl)
     setLocalVideoUrl(file ? URL.createObjectURL(file) : null)
   }
@@ -174,13 +178,16 @@ export default function EditPage() {
         const payload = (await response.json()) as CloudglueResponse
         if (payload?.items) {
           setCloudglueOutput(payload)
+          setFlowStep("select")
+          requestAnimationFrame(() => {
+            selectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+          })
           return
         }
       }
 
       const blob = await response.blob()
       const nextUrl = URL.createObjectURL(blob)
-      setPreviewUrl(nextUrl)
       setPreviewUrl(nextUrl)
     } catch (fetchError) {
       const message = fetchError instanceof Error ? fetchError.message : "Processing failed."
@@ -207,8 +214,49 @@ export default function EditPage() {
     return Math.min(Math.max(time, clipStart), clipEnd)
   }
 
+  const handleGenerateSelected = async () => {
+    if (!videoFile || !cloudglueOutput) return
+    if (!imageFile) {
+      setError("Please upload an image before generating.")
+      return
+    }
+
+    setIsSubmitting(true)
+    setError(null)
+
+    try {
+      const formData = new FormData()
+      formData.append("video", videoFile, videoFile.name)
+      formData.append("image", imageFile)
+      const selectedTargets = cloudglueOutput.items.filter((item, index) => {
+        const key = `${item.label}-${index}`
+        return selectedItems[key]
+      })
+      formData.append("targets", JSON.stringify(selectedTargets))
+
+      const response = await fetch(`${API_BASE_URL}/generate`, {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null)
+        throw new Error(payload?.error ?? "Generate failed.")
+      }
+
+      const blob = await response.blob()
+      const nextUrl = URL.createObjectURL(blob)
+      setPreviewUrl(nextUrl)
+    } catch (fetchError) {
+      const message = fetchError instanceof Error ? fetchError.message : "Generate failed."
+      setError(message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
-    <main className="relative h-[calc(100vh-140px)] overflow-hidden bg-[#0b0b0f] text-base text-white">
+    <main className="relative h-[calc(100vh-140px)] overflow-y-auto bg-[#0b0b0f] text-base text-white">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-32 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(31,212,212,0.35),rgba(10,10,14,0))]" />
         <div className="absolute -left-36 top-1/3 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(88,101,242,0.25),rgba(10,10,14,0))]" />
@@ -236,7 +284,7 @@ export default function EditPage() {
                   disabled={isSubmitting}
                   className="w-full rounded-xl bg-[#23232b] px-6 py-3 font-semibold text-white transition hover:bg-[#2b2b34] disabled:cursor-not-allowed disabled:bg-[#23232b]/60"
                 >
-                  {isSubmitting ? "Processing..." : "Generate video"}
+                  {isSubmitting ? "Processing..." : "Process items"}
                 </button>
               </div>
             </div>
@@ -285,44 +333,7 @@ export default function EditPage() {
                       <input type="file" accept="video/*" className="sr-only" onChange={handleVideoChange} />
                     </label>
                   )}
-                  {cloudglueOutput ? (
-                    <div className="absolute right-6 top-6 w-[320px] max-h-[70%] overflow-auto rounded-2xl border border-white/10 bg-black/70 p-4 backdrop-blur">
-                      <p className="text-xs uppercase tracking-[0.3em] text-teal-300">Suggested changes</p>
-                      <p className="mt-2 text-sm text-white/70">{cloudglueOutput.target_description}</p>
-                      <div className="mt-4 flex flex-col gap-3">
-                        {cloudglueOutput.items.map((item, index) => {
-                          const key = `${item.label}-${index}`
-                          const checked = selectedItems[key] ?? false
-                          return (
-                            <label key={key} className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/5 p-3">
-                              <div className="flex items-center gap-3">
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  onChange={(event) =>
-                                    setSelectedItems((prev) => ({ ...prev, [key]: event.target.checked }))
-                                  }
-                                  className="h-4 w-4 accent-teal-300"
-                                />
-                                <span className="text-sm font-semibold text-white">{item.label}</span>
-                              </div>
-                              <p className="text-xs text-white/60">{item.description}</p>
-                              <div className="flex flex-wrap gap-2 text-[11px] text-white/60">
-                                {item.timestamps?.map((range, rangeIndex) => (
-                                  <span
-                                    key={`${key}-${rangeIndex}`}
-                                    className="rounded-full border border-white/10 bg-black/40 px-2 py-1"
-                                  >
-                                    {formatTimestamp(range.start_time)}–{formatTimestamp(range.end_time)}
-                                  </span>
-                                ))}
-                              </div>
-                            </label>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  ) : null}
+                  {cloudglueOutput ? null : null}
                 </div>
               </section>
               <section className="fixed bottom-24 left-0 right-0 z-20">
@@ -462,6 +473,81 @@ export default function EditPage() {
               </div>
             </section>
             </div>
+          {flowStep === "select" && cloudglueOutput ? (
+            <div ref={selectionRef} className="mx-auto w-full max-w-[96rem] px-6 pb-20 pt-10 lg:px-10">
+              <div className="rounded-3xl border border-white/10 bg-black/40 p-8 backdrop-blur">
+                <p className="text-xs uppercase tracking-[0.35em] text-teal-300">Next step</p>
+                <h2 className="mt-4 text-2xl font-semibold text-white">Select the targets to replace</h2>
+                <p className="mt-3 max-w-2xl text-sm text-white/70">
+                  Review the detected items and choose which ones you want to update with the uploaded image.
+                </p>
+                <div className="mt-8 grid gap-6 lg:grid-cols-[360px_1fr]">
+                  <div className="rounded-2xl border border-white/10 bg-black/50 p-4">
+                    <p className="text-xs uppercase tracking-[0.3em] text-white/60">Checklist</p>
+                    <p className="mt-2 text-sm text-white/70">{cloudglueOutput.target_description}</p>
+                    <div className="mt-4 flex flex-col gap-3">
+                      {cloudglueOutput.items.map((item, index) => {
+                        const key = `${item.label}-${index}`
+                        const checked = selectedItems[key] ?? false
+                        return (
+                          <label key={key} className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/5 p-3">
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={(event) =>
+                                  setSelectedItems((prev) => ({ ...prev, [key]: event.target.checked }))
+                                }
+                                className="h-4 w-4 accent-teal-300"
+                              />
+                              <span className="text-sm font-semibold text-white">{item.label}</span>
+                            </div>
+                            <p className="text-xs text-white/60">{item.description}</p>
+                            <div className="flex flex-wrap gap-2 text-[11px] text-white/60">
+                              {item.timestamps?.map((range, rangeIndex) => (
+                                <span
+                                  key={`${key}-${rangeIndex}`}
+                                  className="rounded-full border border-white/10 bg-black/40 px-2 py-1"
+                                >
+                                  {formatTimestamp(range.start_time)}–{formatTimestamp(range.end_time)}
+                                </span>
+                              ))}
+                            </div>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-black/50 p-4">
+                    <p className="text-xs uppercase tracking-[0.3em] text-white/60">Preview</p>
+                    <div className="mt-4 flex h-[360px] items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black">
+                      {previewUrl || localVideoUrl ? (
+                        <video
+                          key={`selection-${previewUrl ?? localVideoUrl ?? "preview"}`}
+                          controls
+                          className="h-full w-full object-contain"
+                        >
+                          <source src={previewUrl ?? localVideoUrl ?? undefined} />
+                        </video>
+                      ) : (
+                        <div className="text-sm text-white/60">Upload a video to preview.</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-8 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleGenerateSelected}
+                    disabled={isSubmitting}
+                    className="rounded-xl bg-teal-300/20 px-6 py-3 text-sm font-semibold text-teal-200 transition hover:bg-teal-300/30 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? "Generating..." : "Generate"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
           </div>
         </div>
       </div>
