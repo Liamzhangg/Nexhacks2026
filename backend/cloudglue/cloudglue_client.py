@@ -1,6 +1,7 @@
 import os
 import time
-from typing import Any, Callable, Dict, Optional
+import mimetypes
+from typing import Any, Callable, Dict, Optional, Tuple
 
 import requests
 
@@ -10,9 +11,9 @@ BASE_URL_DEFAULT = "https://api.cloudglue.dev/v1"
 
 DEFAULT_WINDOW_SECONDS = 1
 DEFAULT_HOP_SECONDS = 1
-DEFAULT_POLL_INTERVAL_SECONDS = 2
+DEFAULT_POLL_INTERVAL_SECONDS = 2.0
 
-DEFAULT_REQUEST_TIMEOUT_SECONDS = 180
+DEFAULT_REQUEST_TIMEOUT_SECONDS = 300
 DEFAULT_STATUS_TIMEOUT_SECONDS = 60
 
 
@@ -26,6 +27,26 @@ def _json_headers() -> Dict[str, str]:
     return h
 
 
+def _guess_mime_from_path(path: str) -> str:
+    mime, _ = mimetypes.guess_type(path)
+    if mime:
+        return mime
+    return "application/octet-stream"
+
+
+def _raise_with_body(resp: requests.Response) -> None:
+    if 200 <= resp.status_code < 300:
+        return
+    try:
+        body = resp.text
+    except Exception:
+        body = "<no body>"
+    raise requests.HTTPError(
+        f"{resp.status_code} Client Error for url: {resp.url}\nResponse body:\n{body[:4000]}",
+        response=resp,
+    )
+
+
 def upload_video(
     video_path: str,
     base_url: str = BASE_URL_DEFAULT,
@@ -34,15 +55,24 @@ def upload_video(
     if not os.path.exists(video_path):
         raise FileNotFoundError(f"Video not found: {video_path}")
 
+    mime = _guess_mime_from_path(video_path)
+    filename = os.path.basename(video_path) or "upload"
+
     with open(video_path, "rb") as f:
         resp = requests.post(
             f"{base_url}/files",
             headers=_auth_headers(),
-            files={"file": (os.path.basename(video_path), f, "video/mp4")},
+            files={"file": (filename, f, mime)},
             timeout=timeout_seconds,
         )
-    resp.raise_for_status()
-    file_id = resp.json()["id"]
+
+    if resp.status_code < 200 or resp.status_code >= 300:
+        _raise_with_body(resp)
+
+    data = resp.json()
+    file_id = data.get("id")
+    if not file_id:
+        raise RuntimeError(f"Cloudglue /files response missing id: {data}")
     return f"cloudglue://files/{file_id}"
 
 
@@ -107,7 +137,10 @@ def create_extract_job(
         json=payload,
         timeout=timeout_seconds,
     )
-    resp.raise_for_status()
+
+    if resp.status_code < 200 or resp.status_code >= 300:
+        _raise_with_body(resp)
+
     return resp.json()
 
 
@@ -117,7 +150,10 @@ def get_extract_job(
     timeout_seconds: int = DEFAULT_STATUS_TIMEOUT_SECONDS,
 ) -> Dict[str, Any]:
     resp = requests.get(f"{base_url}/extract/{job_id}", headers=_json_headers(), timeout=timeout_seconds)
-    resp.raise_for_status()
+
+    if resp.status_code < 200 or resp.status_code >= 300:
+        _raise_with_body(resp)
+
     return resp.json()
 
 
