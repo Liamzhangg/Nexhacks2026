@@ -8,3 +8,4 @@ output2.mp4
 *.pth
 *.mp4
 *.jpg
+deploy.tar.gz
