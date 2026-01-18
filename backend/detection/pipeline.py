@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 from google.genai import types
 
 from gemini_client import GeminiClient, generate_json, make_client, upload_file_and_wait_active
+from tokenc_compress import compress_prompt
 
 
 def _normalize_target_phrase(s: str) -> str:
@@ -37,6 +38,7 @@ def describe_target_from_image(gc: GeminiClient, image_path: str) -> str:
         "The phrase must start with 'a' or 'an'. Use 3 to 6 words. Include brand only if clearly visible.\n"
         "Output only JSON."
     )
+    prompt = compress_prompt(prompt)
 
     data = generate_json(
         gc,
@@ -117,6 +119,8 @@ def analyze_video(
             "  ]\n"
             "}\n"
         )
+
+    prompt = compress_prompt(prompt)
 
     data = generate_json(
         gc,

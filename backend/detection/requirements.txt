@@ -55,3 +55,4 @@ utils==1.0.2
 uvicorn==0.40.0
 websockets==15.0.1
 yarg==0.1.10
+tokenc
