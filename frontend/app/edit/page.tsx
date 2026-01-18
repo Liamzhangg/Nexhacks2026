@@ -35,6 +35,8 @@ export default function EditPage() {
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({})
   const [flowStep, setFlowStep] = useState<"edit" | "select">("edit")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [showGeneratingOverlay, setShowGeneratingOverlay] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const manualVideoRef = useRef<HTMLVideoElement | null>(null)
   const timelineRef = useRef<HTMLDivElement | null>(null)
@@ -243,6 +245,8 @@ export default function EditPage() {
       return
     }
 
+    setIsGenerating(true)
+    setShowGeneratingOverlay(true)
     setIsSubmitting(true)
     setError(null)
 
@@ -276,11 +280,32 @@ export default function EditPage() {
       setError(message)
     } finally {
       setIsSubmitting(false)
+      setIsGenerating(false)
     }
   }
 
   return (
     <main className="relative h-[calc(100vh-140px)] overflow-hidden bg-[#0a0a0a] text-base text-white">
+      {showGeneratingOverlay ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          onClick={() => {
+            if (!isSubmitting) setShowGeneratingOverlay(false)
+          }}
+        >
+          <div className="rounded-2xl border border-white/10 bg-white/5 px-8 py-6 text-center">
+            <p className="text-sm uppercase tracking-[0.4em] text-white/70">Generating</p>
+            <div className="mt-3 flex items-center justify-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-white/60 animate-bounce [animation-delay:-0.2s]" />
+              <span className="h-2 w-2 rounded-full bg-white/60 animate-bounce [animation-delay:-0.1s]" />
+              <span className="h-2 w-2 rounded-full bg-white/60 animate-bounce" />
+            </div>
+            {!isSubmitting ? (
+              <p className="mt-3 text-xs text-white/60">Click anywhere to continue</p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-32 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(139,92,246,0.25),rgba(10,10,10,0))]" />
         <div className="absolute -left-36 top-1/3 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(139,92,246,0.15),rgba(10,10,10,0))]" />
