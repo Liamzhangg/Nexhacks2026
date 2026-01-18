@@ -60,28 +60,39 @@ export default function HomePage() {
           0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.4); }
           50% { box-shadow: 0 0 40px rgba(168, 85, 247, 0.6), 0 0 60px rgba(236, 72, 153, 0.4); }
         }
+        @keyframes gradient-shift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .animated-slogan {
+          background-size: 300% 300%;
+          animation: gradient-shift 6s ease infinite;
+        }
       `}</style>
 
       {/* Hero Section */}
-      <div className="relative z-10 mx-auto max-w-7xl px-6 pt-20 pb-32">
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-none items-center justify-center px-6 pt-20 pb-32">
         <div className="text-center">
-          <h1 className="text-6xl md:text-7xl lg:text-8xl font-black leading-[1.1] mb-8">
-            <span className="block">Make Every Ad</span>
-            <span className="block bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
-              Relevant. Personal. Local.
+          <h1 className="text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black leading-[1.05] mb-8">
+            <span className="block text-white">Make Every Ad</span>
+            <span className="animated-slogan block bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+              <span className="block">Relevant.</span>
+              <span className="block">Personal.</span>
+              <span className="block">Local.</span>
             </span>
           </h1>
 
           <p className="mx-auto max-w-3xl text-xl text-white/60 leading-relaxed mb-12">
-            Post-production product placement that adapts to your audience. Show iPhones in America, 
+            Post-production product placement that adapts to your audience. Show iPhones in America,
             Huawei in China, Tecno in Nigeria. <span className="text-white/80 font-medium">One movie, infinite possibilities.</span>
           </p>
 
           {/* Video Preview Card */}
-          <div className="relative mx-auto max-w-5xl mt-16">
+          <div className="relative mx-auto mt-16 w-full max-w-none">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-pink-600/20 blur-3xl rounded-3xl" />
             <div className="relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/10 to-white/5 backdrop-blur-xl overflow-hidden">
-              <div className="p-8">
+              <div className="p-4 sm:p-6 lg:p-8">
                 {/* Mock video player */}
                 <div className="relative aspect-video rounded-2xl bg-gradient-to-br from-gray-900 to-black border border-white/10 overflow-hidden group">
                   {/* Video thumbnail effect */}
@@ -153,7 +164,6 @@ export default function HomePage() {
         </div>
 
       
-
 
       </div>
     </main>
