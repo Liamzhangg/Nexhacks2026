@@ -381,32 +381,32 @@ export default function EditPage() {
                     <label className="group flex w-full cursor-pointer items-center justify-center rounded-xl border border-dashed border-white/20 bg-white/5 px-4 py-2 text-center text-sm transition hover:border-purple-500/50 hover:bg-white/10">
                       <span className="font-semibold text-white">Upload video</span>
                       {videoFile ? <span className="ml-3 text-xs text-white/70">{videoFile.name}</span> : null}
-                      <input type="file" accept="video/*" className="sr-only" onChange={handleVideoChange} />
-                    </label>
+                <input type="file" accept="video/*" className="sr-only" onChange={handleVideoChange} />
+              </label>
                     <label className="group flex w-full cursor-pointer items-center justify-center rounded-xl border border-dashed border-white/20 bg-white/5 px-4 py-2 text-center text-sm transition hover:border-purple-500/50 hover:bg-white/10">
                       <span className="font-semibold text-white">Upload image</span>
                       {imageFile ? <span className="ml-3 text-xs text-white/70">{imageFile.name}</span> : null}
-                      <input type="file" accept="image/*" className="sr-only" onChange={handleImageChange} />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={handleSubmit}
-                      disabled={isSubmitting}
+                <input type="file" accept="image/*" className="sr-only" onChange={handleImageChange} />
+              </label>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
                       className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
+              >
                       {isSubmitting ? "Processing..." : "Process items"}
-                    </button>
-                  </div>
-                </div>
+              </button>
+            </div>
+          </div>
               </div>
               <div className="mx-auto flex h-full w-full max-w-[80rem] flex-1 flex-col px-6 py-4 lg:px-10">
                 <div className="relative flex flex-1 flex-col gap-4">
-                  <section className="flex flex-1 flex-col pb-[160px]">
+                  <section className="flex flex-1 flex-col pb-[200px]">
                     <div className="relative w-full rounded-3xl border border-white/10 bg-transparent p-4 backdrop-blur-sm">
-                      <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-black">
-                        {previewUrl || localVideoUrl ? (
-                          <video
-                            key={previewUrl ?? localVideoUrl ?? "preview"}
+                    <div className="relative w-full overflow-hidden rounded-2xl bg-black" style={{ aspectRatio: "16 / 9", maxHeight: "52vh" }}>
+                {previewUrl || localVideoUrl ? (
+                  <video
+                    key={previewUrl ?? localVideoUrl ?? "preview"}
                             ref={manualVideoRef}
                             onLoadedMetadata={(event) => {
                               const duration = event.currentTarget.duration
@@ -431,10 +431,10 @@ export default function EditPage() {
                             onPlay={() => setIsPlaying(true)}
                             onPause={() => setIsPlaying(false)}
                             className="h-full w-full object-contain"
-                          >
-                            <source src={previewUrl ?? localVideoUrl ?? undefined} />
-                          </video>
-                        ) : (
+                  >
+                    <source src={previewUrl ?? localVideoUrl ?? undefined} />
+                  </video>
+                ) : (
                           <label className="flex h-full w-full cursor-pointer items-center justify-center rounded-2xl border border-dashed border-white/10 bg-black/40 text-center transition hover:border-white/30">
                             <div className="flex flex-col items-center gap-2 text-white/80">
                               <span className="text-xs uppercase tracking-[0.35em] text-white/70">Upload video</span>
@@ -569,14 +569,14 @@ export default function EditPage() {
                           ) : (
                             <div className="flex h-20 items-center justify-center text-sm text-white/60">
                               Upload a video to customize the range of edit.
-                            </div>
-                          )}
+                  </div>
+                )}
                         </div>
                       </div>
-                    </div>
-                  </section>
-                </div>
               </div>
+            </section>
+            </div>
+          </div>
             </>
           )}
         </div>
