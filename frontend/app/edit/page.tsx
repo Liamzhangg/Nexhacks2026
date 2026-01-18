@@ -108,7 +108,11 @@ export default function EditPage() {
       video.onerror = () => reject(new Error("Failed to seek video."))
     })
 
-    const stream = video.captureStream()
+    const stream = (video as HTMLVideoElement & { captureStream?: () => MediaStream }).captureStream?.()
+    if (!stream) {
+      URL.revokeObjectURL(objectUrl)
+      throw new Error("captureStream is not supported in this browser.")
+    }
     const chunks: Blob[] = []
     const recorder = new MediaRecorder(stream, { mimeType: "video/webm" })
 
@@ -131,7 +135,7 @@ export default function EditPage() {
       }, 50)
     })
 
-    stream.getTracks().forEach((track) => track.stop())
+    stream.getTracks().forEach((track: MediaStreamTrack) => track.stop())
     URL.revokeObjectURL(objectUrl)
 
     return result
@@ -170,11 +174,20 @@ export default function EditPage() {
       const formData = new FormData()
 
       let videoToSend: Blob | File = videoFile
-
-      formData.append("video", videoToSend, videoFile.name)
-      if (imageFile) {
-        formData.append("image", imageFile)
+      const end = clipEnd ?? videoDuration ?? null
+      if (end != null) {
+        try {
+          videoToSend = await trimVideo(videoFile, clipStart, end)
+        } catch (trimError) {
+          console.warn("Trim failed, sending original video.", trimError)
+        }
       }
+
+      const baseName = videoFile.name.replace(/\.[^/.]+$/, "")
+      const outputName = videoToSend instanceof File ? videoToSend.name : `${baseName}.webm`
+
+      formData.append("video", videoToSend, outputName)
+      formData.append("image", imageFile)
 
       const response = await fetch(`${API_BASE_URL}/analyze`, {
         method: "POST",
@@ -240,10 +253,12 @@ export default function EditPage() {
       const formData = new FormData()
       formData.append("video", videoFile, videoFile.name)
       formData.append("image", imageFile)
+
       const selectedTargets = cloudglueOutput.items.filter((item, index) => {
         const key = `${item.label}-${index}`
         return selectedItems[key]
       })
+
       formData.append("targets", JSON.stringify(selectedTargets))
 
       const response = await fetch(`${API_BASE_URL}/generate`, {
@@ -282,22 +297,22 @@ export default function EditPage() {
               <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3">
                 <label className="group flex w-full cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#3a3a3a] bg-[#23232b] px-4 py-3 text-center transition hover:border-[#4a4a4a] hover:bg-[#2b2b34]">
                   <span className="font-semibold text-white">Upload video</span>
-                {videoFile ? <span className="ml-3 text-sm text-white">{videoFile.name}</span> : null}
-                <input type="file" accept="video/*" className="sr-only" onChange={handleVideoChange} />
-              </label>
+                  {videoFile ? <span className="ml-3 text-sm text-white">{videoFile.name}</span> : null}
+                  <input type="file" accept="video/*" className="sr-only" onChange={handleVideoChange} />
+                </label>
                 <label className="group flex w-full cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#3a3a3a] bg-[#23232b] px-4 py-3 text-center transition hover:border-[#4a4a4a] hover:bg-[#2b2b34]">
                   <span className="font-semibold text-white">Upload image</span>
-                {imageFile ? <span className="ml-3 text-sm text-white">{imageFile.name}</span> : null}
-                <input type="file" accept="image/*" className="sr-only" onChange={handleImageChange} />
-              </label>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={isSubmitting}
+                  {imageFile ? <span className="ml-3 text-sm text-white">{imageFile.name}</span> : null}
+                  <input type="file" accept="image/*" className="sr-only" onChange={handleImageChange} />
+                </label>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
                   className="w-full rounded-xl bg-[#23232b] px-6 py-3 font-semibold text-white transition hover:bg-[#2b2b34] disabled:cursor-not-allowed disabled:bg-[#23232b]/60"
-              >
+                >
                   {isSubmitting ? "Processing..." : "Process items"}
-              </button>
+                </button>
               </div>
             </div>
           </div>
@@ -306,9 +321,9 @@ export default function EditPage() {
             <div className="relative flex flex-1 flex-col fade-up fade-up-delay-1">
               <section className="flex min-h-0 flex-1 flex-col pb-[230px]">
                 <div className="relative flex h-full max-h-[calc(100vh-520px)] flex-1 items-center justify-center overflow-hidden rounded-3xl border border-[#3a3a3a] bg-[#2a2a2a] p-4 md:p-6">
-                {previewUrl || localVideoUrl ? (
-                  <video
-                    key={previewUrl ?? localVideoUrl ?? "preview"}
+                  {previewUrl || localVideoUrl ? (
+                    <video
+                      key={previewUrl ?? localVideoUrl ?? "preview"}
                       ref={manualVideoRef}
                       onLoadedMetadata={(event) => {
                         const duration = event.currentTarget.duration
@@ -333,10 +348,10 @@ export default function EditPage() {
                       onPlay={() => setIsPlaying(true)}
                       onPause={() => setIsPlaying(false)}
                       className="max-h-full max-w-full rounded-2xl bg-black object-contain"
-                  >
-                    <source src={previewUrl ?? localVideoUrl ?? undefined} />
-                  </video>
-                ) : (
+                    >
+                      <source src={previewUrl ?? localVideoUrl ?? undefined} />
+                    </video>
+                  ) : (
                     <label className="flex h-full w-full cursor-pointer items-center justify-center rounded-2xl border border-dashed border-white/10 bg-black/40 text-center transition hover:border-white/30">
                       <div className="flex flex-col items-center gap-3 text-white/80">
                         <span className="text-sm uppercase tracking-[0.35em] text-white/70">Upload video</span>
@@ -345,7 +360,6 @@ export default function EditPage() {
                       <input type="file" accept="video/*" className="sr-only" onChange={handleVideoChange} />
                     </label>
                   )}
-                  {cloudglueOutput ? null : null}
                 </div>
               </section>
               <section className="fixed bottom-24 left-0 right-0 z-20">
@@ -386,23 +400,14 @@ export default function EditPage() {
                             onPointerUp={() => setDraggingHandle(null)}
                             onPointerLeave={() => setDraggingHandle(null)}
                           >
-                            <div className="absolute inset-y-0 left-0 bg-teal-300/20" style={{ width: `${timelineProgress}%` }} />
-                            <div
-                              className="absolute inset-y-0 w-[2px] bg-teal-300"
-                              style={{ left: `${timelineProgress}%` }}
-                            />
+                            <div className="absolute inset-y-0 left-0 bg-purple-400/20" style={{ width: `${timelineProgress}%` }} />
+                            <div className="absolute inset-y-0 w-[2px] bg-purple-400" style={{ left: `${timelineProgress}%` }} />
                             <div
                               className="absolute inset-y-0 bg-white/10"
                               style={{ left: `${startPercent}%`, width: `${Math.max(0, endPercent - startPercent)}%` }}
                             />
-                            <div
-                              className="absolute inset-y-0 w-[2px] bg-white/70"
-                              style={{ left: `${startPercent}%` }}
-                            />
-                            <div
-                              className="absolute inset-y-0 w-[2px] bg-white/70"
-                              style={{ left: `${endPercent}%` }}
-                            />
+                            <div className="absolute inset-y-0 w-[2px] bg-white/70" style={{ left: `${startPercent}%` }} />
+                            <div className="absolute inset-y-0 w-[2px] bg-white/70" style={{ left: `${endPercent}%` }} />
                             <button
                               type="button"
                               aria-label="Clip start handle"
@@ -437,7 +442,9 @@ export default function EditPage() {
                                   <div key={index} className="flex flex-col items-center gap-2">
                                     <div className="h-6 w-[2px] rounded-full bg-white/40" />
                                     <span className="text-[10px] text-white/50">
-                                      {Math.round((videoDuration / Math.min(12, Math.max(4, Math.ceil(videoDuration / 4)))) * index)}
+                                      {Math.round(
+                                        (videoDuration / Math.min(12, Math.max(4, Math.ceil(videoDuration / 4)))) * index
+                                      )}
                                       s
                                     </span>
                                   </div>
@@ -478,19 +485,20 @@ export default function EditPage() {
                       ) : (
                         <div className="flex h-28 items-center justify-center text-sm text-white/60">
                           Upload a video to see the manual timeline.
-                  </div>
-                )}
+                        </div>
+                      )}
                     </div>
                   </div>
-              </div>
-            </section>
+                </div>
+              </section>
             </div>
+          </div>
           {flowStep === "select" && cloudglueOutput ? (
             <div ref={selectionRef} className="mx-auto w-full max-w-[96rem] px-6 pb-20 pt-10 lg:px-10">
-              <div className="rounded-3xl border border-white/10 bg-black/40 p-8 backdrop-blur">
-                <p className="text-xs uppercase tracking-[0.35em] text-teal-300">Next step</p>
+              <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent p-8 backdrop-blur-sm">
+                <p className="text-xs uppercase tracking-[0.35em] text-purple-400">Next step</p>
                 <h2 className="mt-4 text-2xl font-semibold text-white">Select the targets to replace</h2>
-                <p className="mt-3 max-w-2xl text-sm text-white/70">
+                <p className="mt-3 max-w-2xl text-sm text-white/60">
                   Review the detected items and choose which ones you want to update with the uploaded image.
                 </p>
                 <div className="mt-8 grid gap-6 lg:grid-cols-[360px_1fr]">
@@ -499,41 +507,39 @@ export default function EditPage() {
                     <p className="mt-2 text-sm text-white/70">{cloudglueOutput.target_description}</p>
                     <div className="mt-4 max-h-[420px] overflow-y-auto pr-2">
                       <div className="flex flex-col gap-3 pb-6">
-                      {cloudglueOutput.items.map((item, index) => {
-                        const key = `${item.label}-${index}`
-                        const checked = selectedItems[key] ?? false
-                        return (
-                          <label key={key} className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/5 p-3">
-                            <div className="flex items-center gap-3">
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={(event) =>
-                                  setSelectedItems((prev) => ({ ...prev, [key]: event.target.checked }))
-                                }
-                                className="h-4 w-4 accent-teal-300"
-                              />
-                              <span className="text-sm font-semibold text-white">{item.label}</span>
-                            </div>
-                            <p className="text-xs text-white/60">{item.description}</p>
-                            <div className="flex flex-wrap gap-2 text-[11px] text-white/60">
-                              {item.timestamps
-                                ?.map((range) =>
-                                  clampRangeToDuration(range.start_time, range.end_time, videoDuration)
-                                )
-                                .filter((range) => range && range.end > range.start)
-                                .map((range, rangeIndex) => (
-                                  <span
-                                    key={`${key}-${rangeIndex}`}
-                                    className="rounded-full border border-white/10 bg-black/40 px-2 py-1"
-                                  >
-                                    {formatTimestamp(range.start)}–{formatTimestamp(range.end)}
-                                  </span>
-                                ))}
-                            </div>
-                          </label>
-                        )
-                      })}
+                        {cloudglueOutput.items.map((item, index) => {
+                          const key = `${item.label}-${index}`
+                          const checked = selectedItems[key] ?? false
+                          return (
+                            <label key={key} className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/5 p-3">
+                              <div className="flex items-center gap-3">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={(event) =>
+                                    setSelectedItems((prev) => ({ ...prev, [key]: event.target.checked }))
+                                  }
+                                  className="h-4 w-4 accent-teal-300"
+                                />
+                                <span className="text-sm font-semibold text-white">{item.label}</span>
+                              </div>
+                              <p className="text-xs text-white/60">{item.description}</p>
+                              <div className="flex flex-wrap gap-2 text-[11px] text-white/60">
+                                {item.timestamps
+                                  ?.map((range) => clampRangeToDuration(range.start_time, range.end_time, videoDuration))
+                                  .filter((range) => range && range.end > range.start)
+                                  .map((range, rangeIndex) => (
+                                    <span
+                                      key={`${key}-${rangeIndex}`}
+                                      className="rounded-full border border-white/10 bg-black/40 px-2 py-1"
+                                    >
+                                      {formatTimestamp(range!.start)}–{formatTimestamp(range!.end)}
+                                    </span>
+                                  ))}
+                              </div>
+                            </label>
+                          )
+                        })}
                       </div>
                     </div>
                   </div>
@@ -559,7 +565,7 @@ export default function EditPage() {
                     type="button"
                     onClick={handleGenerateSelected}
                     disabled={isSubmitting}
-                    className="rounded-xl bg-teal-300/20 px-6 py-3 text-sm font-semibold text-teal-200 transition hover:bg-teal-300/30 disabled:cursor-not-allowed"
+                    className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {isSubmitting ? "Generating..." : "Generate"}
                   </button>
@@ -567,7 +573,6 @@ export default function EditPage() {
               </div>
             </div>
           ) : null}
-          </div>
         </div>
       </div>
     </main>
