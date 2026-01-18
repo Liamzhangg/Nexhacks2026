@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 export default function HomePage() {
-  const [hoveredCard, setHoveredCard] = useState(null);
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#0a0a0a] text-white">
@@ -62,36 +62,9 @@ export default function HomePage() {
         }
       `}</style>
 
-      {/* Header */}
-      <header className="relative z-20 px-8 py-6">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 blur-md opacity-75" />
-              <div className="relative h-10 w-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-                </svg>
-              </div>
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">AdaptiveAds</span>
-          </div>
-          <nav className="hidden md:flex items-center gap-8 text-sm text-white/60">
-          </nav>
-          <button className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2.5 text-sm font-semibold shadow-lg shadow-purple-500/25 transition-all hover:scale-105 hover:shadow-xl hover:shadow-purple-500/40">
-            Get Started
-          </button>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <div className="relative z-10 mx-auto max-w-7xl px-6 pt-20 pb-32">
         <div className="text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-500/10 px-4 py-2 backdrop-blur-sm mb-8">
-            <div className="h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
-            <span className="text-xs font-medium text-purple-300">Revolutionizing Post-Production Advertising</span>
-          </div>
-
           <h1 className="text-6xl md:text-7xl lg:text-8xl font-black leading-[1.1] mb-8">
             <span className="block">Make Every Ad</span>
             <span className="block bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
@@ -165,51 +138,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Feature Cards */}
-        <div className="mt-32 grid md:grid-cols-3 gap-6">
-          {[
-            {
-              icon: (
-                <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              ),
-              title: "Global Localization",
-              desc: "Automatically adapt products for every region, culture, and demographic"
-            },
-            {
-              icon: (
-                <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              ),
-              title: "AI-Powered",
-              desc: "Machine learning identifies placement opportunities and optimizes conversions"
-            },
-            {
-              icon: (
-                <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              ),
-              title: "Maximize Revenue",
-              desc: "Show relevant products that viewers can actually buy and increase ROI"
-            }
-          ].map((feature, i) => (
-            <div
-              key={i}
-              onMouseEnter={() => setHoveredCard(i)}
-              onMouseLeave={() => setHoveredCard(null)}
-              className="group relative rounded-2xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent p-8 backdrop-blur-sm transition-all hover:border-purple-500/50 hover:shadow-[0_0_50px_rgba(168,85,247,0.15)]"
-            >
-              <div className={`mb-6 inline-flex rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 p-4 text-purple-400 transition-all ${hoveredCard === i ? 'scale-110 rotate-6' : ''}`}>
-                {feature.icon}
-              </div>
-              <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-              <p className="text-white/60 leading-relaxed">{feature.desc}</p>
-            </div>
-          ))}
-        </div>
+      
 
 
       </div>

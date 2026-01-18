@@ -25,7 +25,7 @@ export default function RootLayout({
     <html lang="en" className={oxanium.variable}>
       <body className="bg-black font-sans antialiased text-white">
         <div className="min-h-screen bg-black text-white">
-          <header className="sticky top-0 z-20 border-b border-white/10 bg-black/70 backdrop-blur">
+          <header className="z-20 border-b border-white/10 bg-black/70 backdrop-blur">
             <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-6 px-6 py-6 md:px-10 md:py-8">
               <div className="text-2xl font-semibold uppercase tracking-[0.35em] text-teal-300 md:text-3xl">
                 Nexhacks2026
@@ -36,9 +36,6 @@ export default function RootLayout({
                 </Link>
                 <Link href="/edit" className={linkClassName}>
                   Playground
-                </Link>
-                <Link href="/demo" className={linkClassName}>
-                  Demo
                 </Link>
                 <Link href="/about" className={linkClassName}>
                   About
