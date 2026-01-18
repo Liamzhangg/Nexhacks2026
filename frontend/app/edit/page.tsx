@@ -245,7 +245,7 @@ setIsSubmitting(false)
 <div className="absolute bottom-0 right-0 h-[480px] w-[480px] rounded-full bg-[radial-gradient(circle,rgba(236,72,153,0.2),rgba(10,10,10,0))]" />
 <div className="absolute -bottom-32 left-1/4 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(6,182,212,0.15),rgba(10,10,10,0))]" />
 </div>
-<div className="relative isolate flex h-full flex-col overflow-hidden">
+      <div className="relative isolate flex h-full flex-col overflow-visible">
 <div className="relative z-10 flex h-full w-full flex-col">
 <div className="w-full px-4 pt-6 lg:px-10">
 <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-4 rounded-2xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent px-4 py-4 shadow-[0_20px_40px_-30px_rgba(0,0,0,0.7)] sm:flex-row sm:items-center sm:justify-between backdrop-blur-sm">
@@ -274,7 +274,7 @@ className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 p
 <div className="mx-auto flex h-full w-full max-w-[96rem] flex-1 flex-col px-6 py-4 lg:px-10">
 <div className="relative flex flex-1 flex-col fade-up fade-up-delay-1">
               <section className="flex flex-1 flex-col pb-[230px]">
-                <div className="relative w-full rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent p-4 md:p-6 backdrop-blur-sm">
+                <div className="relative w-full rounded-3xl border border-white/10 bg-transparent p-4 md:p-6 backdrop-blur-sm">
                   <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-black">
                 {previewUrl || localVideoUrl ? (
                   <video
