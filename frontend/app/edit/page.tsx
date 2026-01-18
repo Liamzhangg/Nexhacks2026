@@ -134,11 +134,15 @@ if (!videoFile) {
 setError("Please upload a video before processing.")
 return
     }
-setIsSubmitting(true)
-setError(null)
-try {
-const formData = new FormData()
-let videoToSend: Blob | File = videoFile
+
+    setIsSubmitting(true)
+    setError(null)
+
+    try {
+      const formData = new FormData()
+
+      let videoToSend: Blob | File = videoFile
+
       formData.append("video", videoToSend, videoFile.name)
 if (imageFile) {
         formData.append("image", imageFile)
@@ -221,54 +225,56 @@ setError(message)
 setIsSubmitting(false)
     }
   }
-return (
-<main className="relative h-[calc(100vh-140px)] overflow-y-auto bg-[#0a0a0a] text-base text-white">
-<div className="pointer-events-none absolute inset-0">
-<div className="absolute -top-32 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(139,92,246,0.25),rgba(10,10,10,0))]" />
-<div className="absolute -left-36 top-1/3 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(139,92,246,0.15),rgba(10,10,10,0))]" />
-<div className="absolute bottom-0 right-0 h-[480px] w-[480px] rounded-full bg-[radial-gradient(circle,rgba(236,72,153,0.2),rgba(10,10,10,0))]" />
-<div className="absolute -bottom-32 left-1/4 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(6,182,212,0.15),rgba(10,10,10,0))]" />
-</div>
-<div className="relative isolate flex h-full flex-col overflow-hidden">
-<div className="relative z-10 flex h-full w-full flex-col">
-<div className="w-full px-4 pt-6 lg:px-10">
-<div className="mx-auto flex w-full max-w-[96rem] flex-col gap-4 rounded-2xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent px-4 py-4 shadow-[0_20px_40px_-30px_rgba(0,0,0,0.7)] sm:flex-row sm:items-center sm:justify-between backdrop-blur-sm">
-<div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3">
-<label className="group flex w-full cursor-pointer items-center justify-center rounded-xl border border-dashed border-white/20 bg-white/5 px-4 py-3 text-center transition hover:border-purple-500/50 hover:bg-white/10">
-<span className="font-semibold text-white">Upload video</span>
-{videoFile ? <span className="ml-3 text-sm text-white">{videoFile.name}</span> : null}
-<input type="file" accept="video/*" className="sr-only" onChange={handleVideoChange} />
-</label>
-<label className="group flex w-full cursor-pointer items-center justify-center rounded-xl border border-dashed border-white/20 bg-white/5 px-4 py-3 text-center transition hover:border-purple-500/50 hover:bg-white/10">
-<span className="font-semibold text-white">Upload image</span>
-{imageFile ? <span className="ml-3 text-sm text-white">{imageFile.name}</span> : null}
-<input type="file" accept="image/*" className="sr-only" onChange={handleImageChange} />
-</label>
-<button
-type="button"
-onClick={handleSubmit}
-disabled={isSubmitting}
-className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
->
-{isSubmitting ? "Processing..." : "Process items"}
-</button>
-</div>
-</div>
-</div>
-<div className="mx-auto flex h-full w-full max-w-[96rem] flex-1 flex-col px-6 py-4 lg:px-10">
-<div className="relative flex flex-1 flex-col fade-up fade-up-delay-1">
-<section className="flex min-h-0 flex-1 flex-col pb-[230px]">
-<div className="relative flex h-full max-h-[calc(100vh-520px)] flex-1 items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent p-4 md:p-6 backdrop-blur-sm">
-{previewUrl || localVideoUrl ? (
-<video
-key={previewUrl ?? localVideoUrl ?? "preview"}
-ref={manualVideoRef}
-onLoadedMetadata={(event) => {
-const duration = event.currentTarget.duration
-setVideoDuration(duration)
-setCurrentTime(0)
-setClipStart(0)
-setClipEnd(duration)
+
+  return (
+    <main className="relative h-[calc(100vh-140px)] overflow-y-auto bg-[#0b0b0f] text-base text-white">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-32 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(31,212,212,0.35),rgba(10,10,14,0))]" />
+        <div className="absolute -left-36 top-1/3 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(88,101,242,0.25),rgba(10,10,14,0))]" />
+        <div className="absolute bottom-0 right-0 h-[480px] w-[480px] rounded-full bg-[radial-gradient(circle,rgba(236,72,153,0.2),rgba(10,10,14,0))]" />
+        <div className="absolute -bottom-32 left-1/4 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(16,185,129,0.18),rgba(10,10,14,0))]" />
+      </div>
+      <div className="relative isolate flex h-full flex-col overflow-hidden">
+        <div className="relative z-10 flex h-full w-full flex-col">
+          <div className="w-full px-4 pt-6 lg:px-10">
+            <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-4 rounded-2xl border border-[#2f2f2f] bg-[#15151a]/90 px-4 py-4 shadow-[0_20px_40px_-30px_rgba(0,0,0,0.7)] sm:flex-row sm:items-center sm:justify-between">
+              <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3">
+                <label className="group flex w-full cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#3a3a3a] bg-[#23232b] px-4 py-3 text-center transition hover:border-[#4a4a4a] hover:bg-[#2b2b34]">
+                  <span className="font-semibold text-white">Upload video</span>
+                {videoFile ? <span className="ml-3 text-sm text-white">{videoFile.name}</span> : null}
+                <input type="file" accept="video/*" className="sr-only" onChange={handleVideoChange} />
+              </label>
+                <label className="group flex w-full cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#3a3a3a] bg-[#23232b] px-4 py-3 text-center transition hover:border-[#4a4a4a] hover:bg-[#2b2b34]">
+                  <span className="font-semibold text-white">Upload image</span>
+                {imageFile ? <span className="ml-3 text-sm text-white">{imageFile.name}</span> : null}
+                <input type="file" accept="image/*" className="sr-only" onChange={handleImageChange} />
+              </label>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="w-full rounded-xl bg-[#23232b] px-6 py-3 font-semibold text-white transition hover:bg-[#2b2b34] disabled:cursor-not-allowed disabled:bg-[#23232b]/60"
+                >
+                  {isSubmitting ? "Processing..." : "Process items"}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="mx-auto flex h-full w-full max-w-[96rem] flex-1 flex-col px-6 py-4 lg:px-10">
+            <div className="relative flex flex-1 flex-col fade-up fade-up-delay-1">
+              <section className="flex min-h-0 flex-1 flex-col pb-[230px]">
+                <div className="relative flex h-full max-h-[calc(100vh-520px)] flex-1 items-center justify-center overflow-hidden rounded-3xl border border-[#3a3a3a] bg-[#2a2a2a] p-4 md:p-6">
+                {previewUrl || localVideoUrl ? (
+                  <video
+                    key={previewUrl ?? localVideoUrl ?? "preview"}
+                      ref={manualVideoRef}
+                      onLoadedMetadata={(event) => {
+                        const duration = event.currentTarget.duration
+                        setVideoDuration(duration)
+                        setCurrentTime(0)
+                        setClipStart(0)
+                        setClipEnd(duration)
                         event.currentTarget.volume = volume
                       }}
 onTimeUpdate={(event) => {
@@ -445,31 +451,31 @@ disabled={!videoDuration}
 <h2 className="mt-4 text-2xl font-semibold text-white">Select the targets to replace</h2>
 <p className="mt-3 max-w-2xl text-sm text-white/60">
                   Review the detected items and choose which ones you want to update with the uploaded image.
-</p>
-<div className="mt-8 grid gap-6 lg:grid-cols-[360px_1fr]">
-<div className="rounded-2xl border border-white/10 bg-black/50 p-4">
-<p className="text-xs uppercase tracking-[0.3em] text-white/60">Checklist</p>
-<p className="mt-2 text-sm text-white/60">{cloudglueOutput.target_description}</p>
-<div className="mt-4 flex flex-col gap-3">
-{cloudglueOutput.items.map((item, index) => {
-const key = `${item.label}-${index}`
-const checked = selectedItems[key] ?? false
-return (
-<label key={key} className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/5 p-3">
-<div className="flex items-center gap-3">
-<input
-type="checkbox"
-checked={checked}
-onChange={(event) =>
-setSelectedItems((prev) => ({ ...prev, [key]: event.target.checked }))
-}
-className="h-4 w-4 accent-purple-400"
-/>
-<span className="text-sm font-semibold text-white">{item.label}</span>
-</div>
-<p className="text-xs text-white/60">{item.description}</p>
-<div className="flex flex-wrap gap-2 text-[11px] text-white/60">
-{item.timestamps
+                </p>
+                <div className="mt-8 grid gap-6 lg:grid-cols-[360px_1fr]">
+                  <div className="rounded-2xl border border-white/10 bg-black/50 p-4">
+                    <p className="text-xs uppercase tracking-[0.3em] text-white/60">Checklist</p>
+                    <p className="mt-2 text-sm text-white/70">{cloudglueOutput.target_description}</p>
+                    <div className="mt-4 flex flex-col gap-3">
+                      {cloudglueOutput.items.map((item, index) => {
+                        const key = `${item.label}-${index}`
+                        const checked = selectedItems[key] ?? false
+                        return (
+                          <label key={key} className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/5 p-3">
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={(event) =>
+                                  setSelectedItems((prev) => ({ ...prev, [key]: event.target.checked }))
+                                }
+                                className="h-4 w-4 accent-teal-300"
+                              />
+                              <span className="text-sm font-semibold text-white">{item.label}</span>
+                            </div>
+                            <p className="text-xs text-white/60">{item.description}</p>
+                            <div className="flex flex-wrap gap-2 text-[11px] text-white/60">
+                              {item.timestamps
                                 ?.map((range) =>
 clampRangeToDuration(range.start_time, range.end_time, videoDuration)
                                 )
@@ -486,19 +492,19 @@ className="rounded-full border border-white/10 bg-black/40 px-2 py-1"
 </label>
                         )
                       })}
-</div>
-</div>
-<div className="rounded-2xl border border-white/10 bg-black/50 p-4">
-<p className="text-xs uppercase tracking-[0.3em] text-white/60">Preview</p>
-<div className="mt-4 flex h-[360px] items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black">
-{previewUrl || localVideoUrl ? (
-<video
-key={`selection-${previewUrl ?? localVideoUrl ?? "preview"}`}
-controls
-className="h-full w-full object-contain"
->
-<source src={previewUrl ?? localVideoUrl ?? undefined} />
-</video>
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-black/50 p-4">
+                    <p className="text-xs uppercase tracking-[0.3em] text-white/60">Preview</p>
+                    <div className="mt-4 flex h-[360px] items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black">
+                      {previewUrl || localVideoUrl ? (
+                        <video
+                          key={`selection-${previewUrl ?? localVideoUrl ?? "preview"}`}
+                          controls
+                          className="h-full w-full object-contain"
+                        >
+                          <source src={previewUrl ?? localVideoUrl ?? undefined} />
+                        </video>
                       ) : (
 <div className="text-sm text-white/60">Upload a video to preview.</div>
                       )}
