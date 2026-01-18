@@ -145,6 +145,14 @@ export default function EditPage() {
     return `${String(minutes).padStart(2, "0")}:${String(remaining).padStart(2, "0")}`
   }
 
+  const clampRangeToDuration = (start: number, end: number, duration: number | null) => {
+    if (!Number.isFinite(start) || !Number.isFinite(end)) return null
+    const safeDuration = duration ?? end
+    const clampedStart = Math.max(0, Math.min(start, safeDuration))
+    const clampedEnd = Math.max(clampedStart, Math.min(end, safeDuration))
+    return { start: clampedStart, end: clampedEnd }
+  }
+
   const handleSubmit = async () => {
     if (!videoFile) {
       setError("Please upload a video before processing.")
@@ -504,14 +512,19 @@ export default function EditPage() {
                             </div>
                             <p className="text-xs text-white/60">{item.description}</p>
                             <div className="flex flex-wrap gap-2 text-[11px] text-white/60">
-                              {item.timestamps?.map((range, rangeIndex) => (
-                                <span
-                                  key={`${key}-${rangeIndex}`}
-                                  className="rounded-full border border-white/10 bg-black/40 px-2 py-1"
-                                >
-                                  {formatTimestamp(range.start_time)}–{formatTimestamp(range.end_time)}
-                                </span>
-                              ))}
+                              {item.timestamps
+                                ?.map((range) =>
+                                  clampRangeToDuration(range.start_time, range.end_time, videoDuration)
+                                )
+                                .filter((range) => range && range.end > range.start)
+                                .map((range, rangeIndex) => (
+                                  <span
+                                    key={`${key}-${rangeIndex}`}
+                                    className="rounded-full border border-white/10 bg-black/40 px-2 py-1"
+                                  >
+                                    {formatTimestamp(range.start)}–{formatTimestamp(range.end)}
+                                  </span>
+                                ))}
                             </div>
                           </label>
                         )
