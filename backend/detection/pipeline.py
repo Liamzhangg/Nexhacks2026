@@ -3,7 +3,15 @@ from typing import Any, Dict, List, Optional
 
 from google.genai import types
 
-from gemini_client import GeminiClient, generate_json, make_client, upload_file_and_wait_active
+from gemini_client import (
+    IMAGE_MODEL,
+    VIDEO_MODEL,
+    generate_json,
+    make_image_client,
+    make_video_client,
+    upload_file_and_wait_active,
+)
+from tokenc_compress import compress_prompt
 
 
 def _normalize_target_phrase(s: str) -> str:
@@ -16,7 +24,9 @@ def _normalize_target_phrase(s: str) -> str:
     return f"a {t}"
 
 
-def describe_target_from_image(gc: GeminiClient, image_path: str) -> str:
+def describe_target_from_image(image_path: str) -> str:
+    client = make_image_client()
+
     with open(image_path, "rb") as f:
         b = f.read()
 
@@ -33,14 +43,16 @@ def describe_target_from_image(gc: GeminiClient, image_path: str) -> str:
 
     prompt = (
         "Identify the main physical product or object in the image.\n"
-        "Return JSON: {\"target\": \"a short noun phrase\"}.\n"
+        "Return JSON only: {\"target\": \"a short noun phrase\"}.\n"
         "The phrase must start with 'a' or 'an'. Use 3 to 6 words. Include brand only if clearly visible.\n"
         "Output only JSON."
     )
+    prompt = compress_prompt(prompt)
 
     data = generate_json(
-        gc,
-        [
+        client=client,
+        model=IMAGE_MODEL,
+        contents=[
             types.Part.from_bytes(data=b, mime_type=mime),
             types.Part(text=prompt),
         ],
@@ -52,22 +64,18 @@ def describe_target_from_image(gc: GeminiClient, image_path: str) -> str:
     return _normalize_target_phrase(target)
 
 
-def analyze_video(
-    video_path: str,
-    image_path: Optional[str] = None,
-) -> Dict[str, Any]:
+def analyze_video(video_path: str, image_path: Optional[str] = None) -> Dict[str, Any]:
     if not os.path.exists(video_path):
         raise FileNotFoundError(f"Video not found: {video_path}")
     if image_path is not None and not os.path.exists(image_path):
         raise FileNotFoundError(f"Image not found: {image_path}")
 
-    gc = make_client()
-
     target_desc = None
     if image_path is not None:
-        target_desc = describe_target_from_image(gc, image_path)
+        target_desc = describe_target_from_image(image_path)
 
-    video_file = upload_file_and_wait_active(gc, video_path)
+    video_client = make_video_client()
+    video_file = upload_file_and_wait_active(video_client, video_path)
 
     if target_desc is None:
         prompt = (
@@ -118,12 +126,12 @@ def analyze_video(
             "}\n"
         )
 
+    prompt = compress_prompt(prompt)
+
     data = generate_json(
-        gc,
-        [
-            video_file,
-            types.Part(text=prompt),
-        ],
+        client=video_client,
+        model=VIDEO_MODEL,
+        contents=[video_file, types.Part(text=prompt)],
     )
 
     out: Dict[str, Any] = {"items": []}

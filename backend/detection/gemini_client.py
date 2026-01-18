@@ -2,29 +2,41 @@ import json
 import random
 import re
 import time
-from dataclasses import dataclass
 from typing import Any, Optional
 
 from google import genai
 from google.genai import types
 
-from env_config import get_gemini_api_key, get_gemini_model
+from env_config import get_gemini_video_api_key, get_gemini_image_api_key
 
 
-@dataclass
-class GeminiClient:
-    client: Any
-    model: str
+VIDEO_MODEL = "models/gemini-3-flash-preview"
+IMAGE_MODEL = "models/gemini-3-flash-preview"
+
+_DEFAULT_MAX_RETRIES = 6
+_DEFAULT_BASE_BACKOFF_SECONDS = 1.0
+_DEFAULT_MAX_BACKOFF_SECONDS = 30.0
 
 
-def make_client() -> GeminiClient:
-    api_key = get_gemini_api_key()
-    model = get_gemini_model()
-    c = genai.Client(api_key=api_key)
-    return GeminiClient(client=c, model=model)
+_video_client: Optional[Any] = None
+_image_client: Optional[Any] = None
 
 
-def parse_json_maybe_fenced(text: str) -> Any:
+def make_video_client() -> Any:
+    global _video_client
+    if _video_client is None:
+        _video_client = genai.Client(api_key=get_gemini_video_api_key())
+    return _video_client
+
+
+def make_image_client() -> Any:
+    global _image_client
+    if _image_client is None:
+        _image_client = genai.Client(api_key=get_gemini_image_api_key())
+    return _image_client
+
+
+def _parse_json_maybe_fenced(text: str) -> Any:
     t = (text or "").strip()
     if not t:
         raise ValueError("Empty model response")
@@ -52,11 +64,11 @@ def parse_json_maybe_fenced(text: str) -> Any:
         return json.loads(m.group(0))
 
 
-def sleep_with_jitter(seconds: float) -> None:
+def _sleep_with_jitter(seconds: float) -> None:
     time.sleep(seconds + random.random() * 0.25)
 
 
-def retryable(fn, *, max_retries: int = 6, base_backoff: float = 1.0, max_backoff: float = 30.0):
+def _retryable(fn, *, max_retries: int = _DEFAULT_MAX_RETRIES):
     last_exc: Optional[Exception] = None
     for attempt in range(max_retries + 1):
         try:
@@ -68,42 +80,42 @@ def retryable(fn, *, max_retries: int = 6, base_backoff: float = 1.0, max_backof
             is_temp = "503" in msg or "500" in msg or "timeout" in msg or "temporarily" in msg
             if attempt == max_retries or (not is_rate and not is_temp):
                 raise
-            backoff = min(max_backoff, base_backoff * (2 ** attempt))
-            sleep_with_jitter(backoff)
-    if last_exc:
+            backoff = min(_DEFAULT_MAX_BACKOFF_SECONDS, _DEFAULT_BASE_BACKOFF_SECONDS * (2 ** attempt))
+            _sleep_with_jitter(backoff)
+    if last_exc is not None:
         raise last_exc
-    raise RuntimeError("Retry failed")
+    raise RuntimeError("Retry failed unexpectedly")
 
 
-def upload_file_and_wait_active(gc: GeminiClient, path: str, poll_seconds: float = 2.0) -> Any:
-    video_file = retryable(lambda: gc.client.files.upload(file=path))
+def upload_file_and_wait_active(client: Any, path: str, poll_seconds: float = 2.0) -> Any:
+    uploaded = _retryable(lambda: client.files.upload(file=path))
 
     def _wait() -> Any:
         while True:
-            info = gc.client.files.get(name=video_file.name)
+            info = client.files.get(name=uploaded.name)
             state = getattr(info, "state", None)
             state_name = getattr(state, "name", None) if state is not None else None
             if state_name == "ACTIVE":
-                return video_file
+                return uploaded
             if state_name == "FAILED":
                 raise RuntimeError("Gemini file processing failed")
-            sleep_with_jitter(poll_seconds)
+            _sleep_with_jitter(poll_seconds)
 
-    return retryable(_wait, max_retries=0)
+    return _wait()
 
 
-def generate_json(gc: GeminiClient, contents: list[Any]) -> Any:
+def generate_json(client: Any, model: str, contents: list[Any]) -> Any:
     config = types.GenerateContentConfig(response_mime_type="application/json")
 
     def _call() -> Any:
-        resp = gc.client.models.generate_content(
-            model=gc.model,
+        resp = client.models.generate_content(
+            model=model,
             contents=contents,
             config=config,
         )
         text = getattr(resp, "text", None)
         if not text:
             raise RuntimeError("Gemini returned empty text")
-        return parse_json_maybe_fenced(text)
+        return _parse_json_maybe_fenced(text)
 
-    return retryable(_call)
+    return _retryable(_call)

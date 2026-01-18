@@ -11,14 +11,25 @@ def _ensure_loaded() -> None:
         _loaded = True
 
 
-def get_gemini_api_key() -> str:
+def get_gemini_video_api_key() -> str:
     _ensure_loaded()
-    key = os.getenv("GEMINI_API")
+    key = os.getenv("GEMINI_VIDEO_API")
     if not key:
-        raise RuntimeError("Missing GEMINI_API in .env")
+        raise RuntimeError("Missing GEMINI_VIDEO_API in .env")
     return key
 
 
-def get_gemini_model(default: str = "gemini-3-flash-preview") -> str:
+def get_gemini_image_api_key() -> str:
     _ensure_loaded()
-    return os.getenv("GEMINI_MODEL", default)
+    key = os.getenv("GEMINI_IMAGE_API")
+    if not key:
+        raise RuntimeError("Missing GEMINI_IMAGE_API in .env")
+    return key
+
+
+def get_tokenc_api_key() -> str:
+    _ensure_loaded()
+    key = os.getenv("TOKENC_API")
+    if not key:
+        raise RuntimeError("Missing TOKENC_API in .env")
+    return key
