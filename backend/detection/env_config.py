@@ -23,7 +23,6 @@ def get_gemini_model(default: str = "gemini-3-flash-preview") -> str:
     _ensure_loaded()
     return os.getenv("GEMINI_MODEL", default)
 
-
 def get_tokenc_api_key() -> str:
     _ensure_loaded()
     key = os.getenv("TOKENC_API")
@@ -31,16 +30,3 @@ def get_tokenc_api_key() -> str:
         raise RuntimeError("Missing TOKENC_API in .env")
     return key
 
-
-def get_tokenc_aggressiveness(default: float = 0.55) -> float:
-    _ensure_loaded()
-    raw = os.getenv("TOKENC_AGGRESSIVENESS", str(default))
-    try:
-        x = float(raw)
-    except Exception:
-        x = default
-    if x < 0.0:
-        x = 0.0
-    if x > 1.0:
-        x = 1.0
-    return x
