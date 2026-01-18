@@ -273,8 +273,9 @@ className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 p
 </div>
 <div className="mx-auto flex h-full w-full max-w-[96rem] flex-1 flex-col px-6 py-4 lg:px-10">
 <div className="relative flex flex-1 flex-col fade-up fade-up-delay-1">
-              <section className="flex min-h-0 flex-1 flex-col pb-[230px]">
-                <div className="relative flex w-full min-h-[320px] flex-1 items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent p-4 md:p-6 backdrop-blur-sm">
+              <section className="flex flex-1 flex-col pb-[230px]">
+                <div className="relative w-full rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent p-4 md:p-6 backdrop-blur-sm">
+                  <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-black">
                 {previewUrl || localVideoUrl ? (
                   <video
                     key={previewUrl ?? localVideoUrl ?? "preview"}
@@ -301,12 +302,12 @@ setCurrentTime(clipStart)
                       }}
 onPlay={() => setIsPlaying(true)}
 onPause={() => setIsPlaying(false)}
-className="max-h-full max-w-full rounded-2xl bg-black object-contain"
+                      className="h-full w-full object-contain"
                   >
                     <source src={previewUrl ?? localVideoUrl ?? undefined} />
                   </video>
                 ) : (
-<label className="flex h-full w-full cursor-pointer items-center justify-center rounded-2xl border border-dashed border-white/10 bg-black/40 text-center transition hover:border-white/30">
+                    <label className="flex h-full w-full cursor-pointer items-center justify-center rounded-2xl border border-dashed border-white/10 bg-black/40 text-center transition hover:border-white/30">
 <div className="flex flex-col items-center gap-3 text-white/80">
 <span className="text-sm uppercase tracking-[0.35em] text-white/70">Upload video</span>
 <span className="text-2xl font-semibold text-white">Click to add footage</span>
@@ -314,6 +315,7 @@ className="max-h-full max-w-full rounded-2xl bg-black object-contain"
 <input type="file" accept="video/*" className="sr-only" onChange={handleVideoChange} />
 </label>
                   )}
+                  </div>
 </div>
 </section>
 <section className="fixed bottom-24 left-0 right-0 z-20">
