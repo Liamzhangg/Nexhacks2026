@@ -33,6 +33,7 @@ export default function EditPage() {
   const [clipEnd, setClipEnd] = useState<number | null>(null)
   const [cloudglueOutput, setCloudglueOutput] = useState<CloudglueResponse | null>(null)
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({})
+  const [awaitingTargetSelection, setAwaitingTargetSelection] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const manualVideoRef = useRef<HTMLVideoElement | null>(null)
@@ -53,6 +54,7 @@ export default function EditPage() {
       initial[`${item.label}-${index}`] = true
     })
     setSelectedItems(initial)
+    setAwaitingTargetSelection(true)
   }, [cloudglueOutput])
 
   const handleVideoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,7 +139,7 @@ export default function EditPage() {
     return `${String(minutes).padStart(2, "0")}:${String(remaining).padStart(2, "0")}`
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (phase: "analyze" | "generate" = awaitingTargetSelection ? "generate" : "analyze") => {
     if (!videoFile) {
       setError("Please upload a video before processing.")
       return
@@ -164,6 +166,14 @@ export default function EditPage() {
         formData.append("image", imageFile)
       }
 
+      if (phase === "generate" && cloudglueOutput) {
+        const selectedTargets = cloudglueOutput.items.filter((item, index) => {
+          const key = `${item.label}-${index}`
+          return selectedItems[key]
+        })
+        formData.append("targets", JSON.stringify(selectedTargets))
+      }
+
       const response = await fetch(`${API_BASE_URL}/analyze`, {
         method: "POST",
         body: formData,
@@ -185,6 +195,7 @@ export default function EditPage() {
       const blob = await response.blob()
       const nextUrl = URL.createObjectURL(blob)
       setPreviewUrl(nextUrl)
+      setAwaitingTargetSelection(false)
     } catch (fetchError) {
       const message = fetchError instanceof Error ? fetchError.message : "Processing failed."
       setError(message)
@@ -230,17 +241,21 @@ export default function EditPage() {
               </label>
                 <label className="group flex w-full cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#3a3a3a] bg-[#23232b] px-4 py-3 text-center transition hover:border-[#4a4a4a] hover:bg-[#2b2b34]">
                   <span className="font-semibold text-white">Upload image</span>
-                  {imageFile ? <span className="ml-3 text-sm text-white">{imageFile.name}</span> : null}
-                  <input type="file" accept="image/*" className="sr-only" onChange={handleImageChange} />
-                </label>
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
+                {imageFile ? <span className="ml-3 text-sm text-white">{imageFile.name}</span> : null}
+                <input type="file" accept="image/*" className="sr-only" onChange={handleImageChange} />
+              </label>
+              <button
+                type="button"
+                  onClick={() => handleSubmit()}
+                disabled={isSubmitting}
                   className="w-full rounded-xl bg-[#23232b] px-6 py-3 font-semibold text-white transition hover:bg-[#2b2b34] disabled:cursor-not-allowed disabled:bg-[#23232b]/60"
                 >
-                  {isSubmitting ? "Processing..." : "Generate video"}
-                </button>
+                  {isSubmitting
+                    ? "Processing..."
+                    : awaitingTargetSelection
+                      ? "Generate selected"
+                      : "Generate video"}
+              </button>
               </div>
             </div>
           </div>
@@ -249,9 +264,9 @@ export default function EditPage() {
             <div className="relative flex flex-1 flex-col fade-up fade-up-delay-1">
               <section className="flex min-h-0 flex-1 flex-col pb-[230px]">
                 <div className="relative flex h-full max-h-[calc(100vh-520px)] flex-1 items-center justify-center overflow-hidden rounded-3xl border border-[#3a3a3a] bg-[#2a2a2a] p-4 md:p-6">
-                  {previewUrl || localVideoUrl ? (
-                    <video
-                      key={previewUrl ?? localVideoUrl ?? "preview"}
+                {previewUrl || localVideoUrl ? (
+                  <video
+                    key={previewUrl ?? localVideoUrl ?? "preview"}
                       ref={manualVideoRef}
                       onLoadedMetadata={(event) => {
                         const duration = event.currentTarget.duration
@@ -276,10 +291,10 @@ export default function EditPage() {
                       onPlay={() => setIsPlaying(true)}
                       onPause={() => setIsPlaying(false)}
                       className="max-h-full max-w-full rounded-2xl bg-black object-contain"
-                    >
-                      <source src={previewUrl ?? localVideoUrl ?? undefined} />
-                    </video>
-                  ) : (
+                  >
+                    <source src={previewUrl ?? localVideoUrl ?? undefined} />
+                  </video>
+                ) : (
                     <label className="flex h-full w-full cursor-pointer items-center justify-center rounded-2xl border border-dashed border-white/10 bg-black/40 text-center transition hover:border-white/30">
                       <div className="flex flex-col items-center gap-3 text-white/80">
                         <span className="text-sm uppercase tracking-[0.35em] text-white/70">Upload video</span>
@@ -324,6 +339,15 @@ export default function EditPage() {
                           )
                         })}
                       </div>
+                      {awaitingTargetSelection ? (
+                        <button
+                          type="button"
+                          onClick={() => handleSubmit("generate")}
+                          className="mt-4 w-full rounded-xl border border-teal-300/40 bg-teal-300/10 px-4 py-2 text-sm font-semibold text-teal-200 transition hover:bg-teal-300/20"
+                        >
+                          Generate selected
+                        </button>
+                      ) : null}
                     </div>
                   ) : null}
                 </div>
@@ -456,12 +480,12 @@ export default function EditPage() {
                       ) : (
                         <div className="flex h-28 items-center justify-center text-sm text-white/60">
                           Upload a video to see the manual timeline.
-                        </div>
-                      )}
+                  </div>
+                )}
                     </div>
                   </div>
-                </div>
-              </section>
+              </div>
+            </section>
             </div>
           </div>
         </div>
