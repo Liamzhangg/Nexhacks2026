@@ -1,8 +1,9 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 from werkzeug.utils import secure_filename
 import tempfile
+import uuid
 
 
 from langchain.agents import create_agent
@@ -13,6 +14,7 @@ load_dotenv()
 GOOGLE_API_KEY =os.getenv("GOOGLE_API_KEY")
 os.environ["GOOGLE_API_KEY"]= GOOGLE_API_KEY
 from langchain_google_genai import ChatGoogleGenerativeAI
+from video_script import run_video_workflow
 
 model = ChatGoogleGenerativeAI(
     model="gemini-3-pro-preview",
@@ -30,27 +32,25 @@ agent= create_agent(
 
 import base64
 from langchain.messages import HumanMessage
+
+
 def backend(video_path, input_text):
-    video_bytes = open(video_path, "rb").read()
-    video_base64 = base64.b64encode(video_bytes).decode("utf-8")
+    """Send the uploaded video + prompt to the Gemini agent for contextual text."""
+    if not input_text:
+        return ""
+
+    with open(video_path, "rb") as video_file:
+        video_base64 = base64.b64encode(video_file.read()).decode("utf-8")
+
     mime_type = "video/mp4"
     message = HumanMessage(
         content=[
             {"type": "text", "text": input_text},
-            {
-                "type": "video",
-                "base64": video_base64,
-                "mime_type": mime_type,
-                },
-                ]
-                )
-    output_path = os.path.join(
-        app.config['UPLOAD_FOLDER'], 
-        f"processed_{os.path.basename(video_path)}"
+            {"type": "video", "base64": video_base64, "mime_type": mime_type},
+        ]
     )
-    response = agent.invoke({"messages":[message]})
-    text=response["messages"][-1].content
-    return output_path, text
+    response = agent.invoke({"messages": [message]})
+    return response["messages"][-1].content
 
 
 app = Flask(__name__)
@@ -58,49 +58,58 @@ CORS(app)  # Enable CORS for frontend communication
 
 # Configuration
 UPLOAD_FOLDER = tempfile.mkdtemp()
-ALLOWED_EXTENSIONS = {'mp4', 'avi', 'mov', 'mkv'}
+ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'avi', 'mov', 'mkv'}
+ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 
 
-def allowed_file(filename):
+def allowed_video_file(filename):
     """Check if file extension is allowed"""
     return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_VIDEO_EXTENSIONS
 
 
-def process_video_backend(video_path, text_input):
+def allowed_image_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
+
+
+DEFAULT_POSITIVE_PROMPT = "three pepsi cans spinning from above"
+DEFAULT_SEGMENTATION_PROMPT = "coke bottle"
+
+
+def process_video_backend(video_path, text_input, *, image_path=None):
     """
-    Send video and text to backend for processing
-    This is a placeholder - replace with your actual backend logic
-    
-    Args:
-        video_path: Path to the uploaded video file
-        text_input: Text input from the frontend
-    
-    Returns:
-        Path to the processed video file
+    Run the ComfyUI workflow (video_script.py) and return the generated file path + text output.
     """
-    # TODO: Implement your backend processing logic here
-    # Example: Send to ML model, video processing service, etc.
-    
-    # For now, just return the same video (placeholder)
-    output_path = os.path.join(
-        app.config['UPLOAD_FOLDER'], 
-        f"processed_{os.path.basename(video_path)}"
+    if not image_path or not os.path.exists(image_path):
+        raise ValueError("A reference image is required to run the video workflow.")
+
+    positive_prompt = text_input.strip() if text_input else DEFAULT_POSITIVE_PROMPT
+    segmentation_prompt = text_input.strip() if text_input else DEFAULT_SEGMENTATION_PROMPT
+    prefix = f"processed_{uuid.uuid4().hex}"
+
+    generated_videos = run_video_workflow(
+        video_path=video_path,
+        positive_prompt=positive_prompt,
+        reference_image=image_path,
+        segmentation_prompt=segmentation_prompt,
+        filename_prefix=prefix,
+        additional_overrides={"queue_size": 1},
     )
-    
-    # Simulate processing - in reality, you'd do actual processing here
-    # Example: model.process(video_path, text_input)
-    # Example: requests.post('http://backend-service/process', ...)
-    
-    # Placeholder: just copy the file
-    import shutil
-    shutil.copy(video_path, output_path)
-    
-    return output_path
+
+    if not generated_videos:
+        raise RuntimeError("Video generation workflow did not produce any outputs.")
+
+    processed_video_path = os.path.abspath(generated_videos[0])
+    if not os.path.exists(processed_video_path):
+        raise FileNotFoundError(f"Generated video missing at {processed_video_path}")
+
+    text_output = backend(video_path, text_input)
+    return processed_video_path, text_output
 
 
 @app.route('/process-video', methods=['POST'])
@@ -109,35 +118,54 @@ def process_video():
     Endpoint to receive video and text from frontend,
     process it, and return the processed video
     """
+    input_path = None
+    image_path = None
+    output_path = None
     try:
         # Check if video file is present
         if 'video' not in request.files:
             return jsonify({'error': 'No video file provided'}), 400
         
         video_file = request.files['video']
+        image_file = request.files.get('image')
         text_input = request.form.get('text', '')
         
         # Validate file
         if video_file.filename == '':
             return jsonify({'error': 'No video file selected'}), 400
         
-        if not allowed_file(video_file.filename):
+        if not allowed_video_file(video_file.filename):
             return jsonify({'error': 'Invalid file type'}), 400
+
+        if image_file is None or image_file.filename == '':
+            return jsonify({'error': 'Reference image is required'}), 400
+
+        if not allowed_image_file(image_file.filename):
+            return jsonify({'error': 'Invalid image file type'}), 400
         
         # Save uploaded video
         filename = secure_filename(video_file.filename)
         input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         video_file.save(input_path)
+
+        image_filename = secure_filename(image_file.filename)
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
+        image_file.save(image_path)
         
         # Process video with backend
-        output_path, output_text = process_video_backend(input_path, text_input)
-        video_base64 = base64.b64encode(output_path).decode('utf-8')
+        output_path, output_text = process_video_backend(
+            input_path,
+            text_input,
+            image_path=image_path,
+        )
+        with open(output_path, 'rb') as processed_file:
+            video_base64 = base64.b64encode(processed_file.read()).decode('utf-8')
         
         # Return processed video
         return jsonify({
             'video': video_base64,
             'text': output_text,
-            'filename': f'processed_{filename}'
+            'filename': os.path.basename(output_path)
         }), 200
     
     except Exception as e:
@@ -145,8 +173,12 @@ def process_video():
     
     finally:
         # Clean up uploaded file
-        if os.path.exists(input_path):
-            os.remove(input_path)
+        for path in (input_path, image_path, output_path):
+            if path and os.path.exists(path):
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
 
 
 @app.route('/health', methods=['GET'])

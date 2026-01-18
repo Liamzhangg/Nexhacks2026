@@ -4,7 +4,7 @@ import sys
 import json
 import argparse
 import contextlib
-from typing import Sequence, Mapping, Any, Union
+from typing import Sequence, Mapping, Any, Union, Optional, Dict, List
 import torch
 
 
@@ -595,10 +595,11 @@ def import_custom_nodes() -> None:
 _custom_nodes_imported = False
 _custom_path_added = False
 _output_directory_set = False
+_output_directory_cache = None
 
 
 def ensure_output_directory():
-    global _output_directory_set
+    global _output_directory_set, _output_directory_cache
     if _output_directory_set:
         return
     script_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
@@ -608,6 +609,75 @@ def ensure_output_directory():
         return
     set_output_directory(script_dir)
     _output_directory_set = True
+    _output_directory_cache = script_dir
+
+
+def _get_output_directory():
+    """Best-effort resolution of ComfyUI's output directory."""
+    global _output_directory_cache
+    if _output_directory_cache and os.path.isdir(_output_directory_cache):
+        return _output_directory_cache
+
+    try:
+        from folder_paths import get_output_directory
+    except ImportError:
+        pass
+    else:
+        try:
+            candidate = get_output_directory()
+        except Exception:
+            candidate = None
+        if candidate and os.path.isdir(candidate):
+            _output_directory_cache = candidate
+            return _output_directory_cache
+
+    script_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
+    _output_directory_cache = script_dir
+    return _output_directory_cache
+
+
+def _extract_video_results(savevideo_result):
+    """Pull absolute file paths out of a SaveVideo node response."""
+    outputs = []
+    if not isinstance(savevideo_result, dict):
+        return outputs
+
+    entries = []
+    ui_section = savevideo_result.get("ui")
+    if isinstance(ui_section, dict):
+        videos = ui_section.get("videos")
+        if isinstance(videos, list):
+            entries.extend(videos)
+
+    raw_results = savevideo_result.get("result")
+    if isinstance(raw_results, list):
+        entries.extend(raw_results)
+
+    output_dir = _get_output_directory()
+
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        filename = entry.get("filename")
+        subfolder = entry.get("subfolder", "")
+        if not filename:
+            continue
+
+        if os.path.isabs(filename):
+            candidate = filename
+        else:
+            candidate = os.path.join(output_dir, subfolder, filename)
+            if not os.path.exists(candidate):
+                candidate = os.path.join(output_dir, filename)
+            if not os.path.exists(candidate) and subfolder:
+                if os.path.isabs(subfolder):
+                    candidate = os.path.join(subfolder, filename)
+                else:
+                    candidate = os.path.join(output_dir, subfolder, filename)
+
+        outputs.append(os.path.abspath(candidate))
+
+    return outputs
 
 
 def main(*func_args, **func_kwargs):
@@ -750,6 +820,7 @@ def main(*func_args, **func_kwargs):
         createvideo = instantiate_node("CreateVideo")
         savevideo = instantiate_node("SaveVideo")
         maskpreview = instantiate_node("MaskPreview")
+        generated_videos = []
         for q in range(args.queue_size):
             sam3segmentation_28 = sam3segmentation.segment(
                 prompt=parse_arg(args.prompt18),
@@ -838,10 +909,44 @@ def main(*func_args, **func_kwargs):
                 codec=parse_arg(args.codec38),
                 video=get_value_at_index(createvideo_4, 0),
             )
+            generated_videos.extend(_extract_video_results(savevideo_3))
 
             maskpreview_27 = maskpreview.EXECUTE_NORMALIZED(
                 mask=get_value_at_index(sam3segmentation_28, 2)
             )
+
+        return generated_videos
+
+
+def run_video_workflow(
+    video_path: str,
+    positive_prompt: str,
+    reference_image: Optional[str] = None,
+    *,
+    negative_prompt: Optional[str] = None,
+    segmentation_prompt: Optional[str] = None,
+    filename_prefix: Optional[str] = None,
+    additional_overrides: Optional[Dict[str, Any]] = None,
+) -> List[str]:
+    """Programmatic helper to invoke the workflow from other modules."""
+    overrides: Dict[str, Any] = {
+        "video9": os.path.abspath(video_path),
+        "text8": positive_prompt,
+    }
+
+    if reference_image:
+        overrides["image17"] = os.path.abspath(reference_image)
+
+    if negative_prompt:
+        overrides["text16"] = negative_prompt
+    if segmentation_prompt:
+        overrides["prompt18"] = segmentation_prompt
+    if filename_prefix:
+        overrides["filename_prefix36"] = filename_prefix
+    if additional_overrides:
+        overrides.update(additional_overrides)
+
+    return main(**overrides)
 
 
 if __name__ == "__main__":
