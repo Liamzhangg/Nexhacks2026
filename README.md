@@ -1,4 +1,4 @@
-# Nexhacks2026
+# Nexhacks2026 project --- ADaptiv
 
 Frontend (Next.js) + backend (Flask) for a video + image prompt interface.
 
