@@ -75,6 +75,10 @@ export default function EditPage() {
   }
 
   const trimVideo = async (file: File, startTime: number, endTime: number) => {
+    const duration = endTime - startTime
+    if (duration < 2) {
+      throw new Error(`Trim duration too short: ${duration}s (minimum 2s required)`)
+    }
     if (endTime <= startTime) {
       throw new Error("Invalid trim range.")
     }
@@ -90,9 +94,9 @@ export default function EditPage() {
       video.onerror = () => reject(new Error("Failed to load video metadata."))
     })
 
-    const duration = video.duration
-    const safeStart = Math.max(0, Math.min(startTime, duration))
-    const safeEnd = Math.max(safeStart, Math.min(endTime, duration))
+    const videoDuration = video.duration
+    const safeStart = Math.max(0, Math.min(startTime, videoDuration))
+    const safeEnd = Math.max(safeStart + 2, Math.min(endTime, videoDuration))
 
     video.currentTime = safeStart
     await new Promise<void>((resolve, reject) => {
@@ -150,16 +154,8 @@ export default function EditPage() {
       const formData = new FormData()
 
       let videoToSend: Blob | File = videoFile
-      const end = clipEnd ?? videoDuration ?? null
-      if (end != null) {
-        try {
-          videoToSend = await trimVideo(videoFile, clipStart, end)
-        } catch (trimError) {
-          console.warn("Trim failed, sending original video.", trimError)
-        }
-      }
 
-      formData.append("video", videoToSend, videoFile.name.replace(/\.[^/.]+$/, "") + ".webm")
+      formData.append("video", videoToSend, videoFile.name)
       if (imageFile) {
         formData.append("image", imageFile)
       }
@@ -184,6 +180,7 @@ export default function EditPage() {
 
       const blob = await response.blob()
       const nextUrl = URL.createObjectURL(blob)
+      setPreviewUrl(nextUrl)
       setPreviewUrl(nextUrl)
     } catch (fetchError) {
       const message = fetchError instanceof Error ? fetchError.message : "Processing failed."
@@ -346,14 +343,16 @@ export default function EditPage() {
                               const next = getTimeFromPointer(event.clientX)
                               if (next == null) return
                               if (draggingHandle === "start") {
-                                const bounded = Math.min(next, clipEnd ?? next)
+                                const maxStart = Math.max(0, (clipEnd ?? videoDuration) - 2)
+                                const bounded = Math.min(next, maxStart)
                                 setClipStart(bounded)
                                 setCurrentTime(bounded)
                                 if (manualVideoRef.current) {
                                   manualVideoRef.current.currentTime = bounded
                                 }
                               } else {
-                                const bounded = Math.max(next, clipStart)
+                                const minEnd = clipStart + 2
+                                const bounded = Math.max(next, minEnd)
                                 setClipEnd(bounded)
                                 if (manualVideoRef.current && currentTime > bounded) {
                                   manualVideoRef.current.currentTime = bounded
