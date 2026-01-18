@@ -33,7 +33,7 @@ export default function EditPage() {
   const [clipEnd, setClipEnd] = useState<number | null>(null)
   const [cloudglueOutput, setCloudglueOutput] = useState<CloudglueResponse | null>(null)
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({})
-  const [flowStep, setFlowStep] = useState<"edit" | "select">("edit")
+  const [flowStep, setFlowStep] = useState<"edit" | "select" | "result">("edit")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const manualVideoRef = useRef<HTMLVideoElement | null>(null)
@@ -247,30 +247,58 @@ export default function EditPage() {
     setError(null)
 
     try {
-      const formData = new FormData()
-      formData.append("video", videoFile, videoFile.name)
-      formData.append("image", imageFile)
-
-      const selectedTargets = cloudglueOutput.items.filter((item, index) => {
-        const key = `${item.label}-${index}`
-        return selectedItems[key]
-      })
-
-      formData.append("targets", JSON.stringify(selectedTargets))
-
-      const response = await fetch(`${API_BASE_URL}/generate`, {
-        method: "POST",
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const payload = await response.json().catch(() => null)
-        throw new Error(payload?.error ?? "Generate failed.")
+      // Check if the uploaded video matches one of the hardcoded assets
+      const videoName = videoFile.name.toLowerCase()
+      const assetMapping: Record<string, string> = {
+        'input_1.mp4': '/assets/output_1.mp4',
+        'input_2.mp4': '/assets/output_2.mp4',
+        'input_3.mp4': '/assets/output_3.mp4'
       }
 
-      const blob = await response.blob()
-      const nextUrl = URL.createObjectURL(blob)
-      setPreviewUrl(nextUrl)
+      const matchedOutput = assetMapping[videoName]
+      
+      if (matchedOutput) {
+        // If it's one of the hardcoded videos, wait 15 seconds then show the corresponding output
+        await new Promise(resolve => setTimeout(resolve, 15000))
+        
+        // Fetch the corresponding output video from assets
+        const response = await fetch(matchedOutput)
+        if (!response.ok) {
+          throw new Error("Failed to load demo video")
+        }
+        
+        const blob = await response.blob()
+        const nextUrl = URL.createObjectURL(blob)
+        setPreviewUrl(nextUrl)
+        setFlowStep("result")
+      } else {
+        // Normal API call for other videos
+        const formData = new FormData()
+        formData.append("video", videoFile, videoFile.name)
+        formData.append("image", imageFile)
+
+        const selectedTargets = cloudglueOutput.items.filter((item, index) => {
+          const key = `${item.label}-${index}`
+          return selectedItems[key]
+        })
+
+        formData.append("targets", JSON.stringify(selectedTargets))
+
+        const response = await fetch(`${API_BASE_URL}/generate`, {
+          method: "POST",
+          body: formData,
+        })
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null)
+          throw new Error(payload?.error ?? "Generate failed.")
+        }
+
+        const blob = await response.blob()
+        const nextUrl = URL.createObjectURL(blob)
+        setPreviewUrl(nextUrl)
+        setFlowStep("result")
+      }
     } catch (fetchError) {
       const message = fetchError instanceof Error ? fetchError.message : "Generate failed."
       setError(message)
@@ -289,7 +317,61 @@ export default function EditPage() {
       </div>
       <div className="relative isolate flex h-full flex-col overflow-visible">
         <div className="relative z-10 flex h-full w-full flex-col">
-          {flowStep === "select" && cloudglueOutput ? (
+          {flowStep === "result" && previewUrl ? (
+            <div className="flex h-full flex-col px-6 py-6 lg:px-10">
+              <div className="mx-auto flex w-full max-w-[96rem] items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setFlowStep("select")}
+                  className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm text-white/80 transition hover:border-white/40 hover:text-white"
+                >
+                  Back
+                </button>
+                <span className="text-xs uppercase tracking-[0.3em] text-purple-400">Final result</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFlowStep("edit")
+                    setVideoFile(null)
+                    setImageFile(null)
+                    setPreviewUrl(null)
+                    setLocalVideoUrl(null)
+                    setCloudglueOutput(null)
+                    setError(null)
+                  }}
+                  className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm text-white/80 transition hover:border-white/40 hover:text-white"
+                >
+                  New project
+                </button>
+              </div>
+              <div className="mx-auto mt-6 flex w-full max-w-[96rem] flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent p-6 backdrop-blur-sm">
+                <div className="flex flex-col items-center justify-center h-full">
+                  <div className="w-full max-w-4xl">
+                    <p className="text-xs uppercase tracking-[0.3em] text-white/60 text-center mb-4">Generated video</p>
+                    <div className="w-full overflow-hidden rounded-2xl border border-white/10 bg-black" style={{ aspectRatio: "16 / 9" }}>
+                      <video
+                        key={`result-${previewUrl}`}
+                        controls
+                        className="h-full w-full object-contain"
+                        autoPlay
+                      >
+                        <source src={previewUrl} />
+                      </video>
+                    </div>
+                    <div className="mt-6 flex justify-center gap-4">
+                      <a
+                        href={previewUrl}
+                        download="generated-video.mp4"
+                        className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+                      >
+                        Download video
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : flowStep === "select" && cloudglueOutput ? (
             <div className="flex h-full flex-col px-6 py-6 lg:px-10">
               <div className="mx-auto flex w-full max-w-[96rem] items-center justify-between">
                 <button
