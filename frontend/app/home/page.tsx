@@ -84,12 +84,18 @@ export default function HomePage() {
           </h1>
 
           <p className="mx-auto max-w-3xl text-xl text-white/60 leading-relaxed mb-12">
-            Post-production product placement that adapts to your audience. Show iPhones in America,
-            Huawei in China, Tecno in Nigeria. <span className="text-white/80 font-medium">One movie, infinite possibilities.</span>
+            Post-production product placement that adapts to your audience. With one scene, generate endless ads and
+            seamless product placements. <span className="text-white/80 font-medium">One movie, infinite possibilities.</span>
           </p>
+          <div className="flex flex-col items-center justify-center mb-12 text-white/70">
+            <span className="text-sm font-semibold uppercase tracking-[0.3em]">See the capabilities</span>
+            <svg className="mt-2 h-5 w-5 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
 
           {/* Video Preview Card */}
-          <div className="relative mx-auto mt-16 w-full max-w-none">
+          <div className="relative mx-auto mt-8 w-full max-w-none">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-pink-600/20 blur-3xl rounded-3xl" />
             <div className="relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/10 to-white/5 backdrop-blur-xl overflow-hidden">
               <div className="p-4 sm:p-6 lg:p-8">

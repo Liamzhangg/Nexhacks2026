@@ -19,7 +19,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   const linkClassName =
-    "rounded-2xl border border-white/20 px-6 py-3 text-sm font-medium text-white/90 transition hover:border-teal-300/70 hover:text-white md:px-8 md:py-4 md:text-base"
+    "rounded-2xl border border-white/20 px-6 py-3 text-sm font-medium text-white/75 transition hover:border-white/40 hover:text-white md:px-8 md:py-4 md:text-base"
 
   return (
     <html lang="en" className={oxanium.variable}>
@@ -27,7 +27,7 @@ export default function RootLayout({
         <div className="min-h-screen bg-black text-white">
           <header className="sticky top-0 z-20 border-b border-white/10 bg-black/70 backdrop-blur">
             <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-6 px-6 py-6 md:px-10 md:py-8">
-              <div className="flex items-center gap-3 text-2xl font-semibold text-teal-300 md:text-3xl">
+              <div className="flex items-center gap-3 text-2xl font-semibold text-purple-300 md:text-3xl">
                 <div className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 shadow-[0_0_24px_rgba(56,189,248,0.25)]">
                   <div className="absolute inset-1 rounded-full bg-gradient-to-br from-purple-500/40 via-fuchsia-400/30 to-cyan-400/30" />
                   <div className="relative h-5 w-5">
@@ -51,9 +51,6 @@ export default function RootLayout({
                 </Link>
                 <Link href="/about" className={linkClassName}>
                   About
-                </Link>
-                <Link href="/us" className={linkClassName}>
-                  Us
                 </Link>
               </nav>
             </div>

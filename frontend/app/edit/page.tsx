@@ -438,7 +438,7 @@ disabled={!videoDuration}
 </div>
                       ) : (
 <div className="flex h-28 items-center justify-center text-sm text-white/60">
-                          Upload a video to see the manual timeline.
+                          Upload a video to customize the range of edit.
 </div>
                       )}
 </div>
