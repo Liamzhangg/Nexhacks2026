@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useRef, useState } from "react"
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://adaptiv.apps.austinjiang.com"
 type CloudglueTimestamp = {
 start_time: number
 end_time: number
